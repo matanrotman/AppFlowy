@@ -3,6 +3,7 @@ import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/actions/block_action_option_cubit.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/plugins.dart';
 import 'package:appflowy/plugins/document/presentation/editor_style.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -58,7 +59,7 @@ class _TextHeadingActionListState extends State<TextHeadingActionList> {
   Widget build(BuildContext context) {
     return AppFlowyPopover(
       controller: popoverController,
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: documentPopoverDirection(context),
       offset: const Offset(0, 2.0),
       onOpen: () => keepEditorFocusNotifier.increase(),
       onClose: () {

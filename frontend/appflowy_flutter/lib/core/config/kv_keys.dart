@@ -56,6 +56,12 @@ class KVKeys {
   static const String showRenameDialogWhenCreatingNewFile =
       'showRenameDialogWhenCreatingNewFile';
 
+  /// The key for saving the sidebar dock side (auto/left/right).
+  ///
+  /// See [SidebarDockSide] in
+  /// `workspace/application/settings/appearance/sidebar_dock_side.dart`.
+  static const String sidebarDockSide = 'sidebarDockSide';
+
   static const String kCloudType = 'kCloudType';
   static const String kAppflowyCloudBaseURL = 'kAppFlowyCloudBaseURL';
   static const String kAppFlowyBaseShareDomain = 'kAppFlowyBaseShareDomain';

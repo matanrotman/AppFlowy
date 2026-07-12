@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/workspace/application/home/home_setting_bloc.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -36,6 +39,14 @@ class FlowyNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The "expand sidebar" trigger belongs at whichever edge the
+    // sidebar will slide back in from, so this row's own direction is
+    // driven by the sidebar dock side, not by document/UI locale — the
+    // breadcrumb items nested inside keep their own left-to-right order.
+    final sidebarOnRight = resolveSidebarOnRight(
+      context,
+      context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+    );
     return ChangeNotifierProxyProvider<PageNotifier, NavigationNotifier>(
       create: (_) {
         final notifier = Provider.of<PageNotifier>(context, listen: false);
@@ -46,8 +57,10 @@ class FlowyNavigation extends StatelessWidget {
       update: (_, notifier, controller) => controller!..update(notifier),
       child: Expanded(
         child: Row(
+          textDirection:
+              sidebarOnRight ? ui.TextDirection.rtl : ui.TextDirection.ltr,
           children: [
-            _renderCollapse(context),
+            _renderCollapse(context, sidebarOnRight),
             Selector<NavigationNotifier, List<NavigationItem>>(
               selector: (context, notifier) => notifier.navigationItems,
               builder: (ctx, items, child) => Expanded(
@@ -62,7 +75,7 @@ class FlowyNavigation extends StatelessWidget {
     );
   }
 
-  Widget _renderCollapse(BuildContext context) {
+  Widget _renderCollapse(BuildContext context, bool sidebarOnRight) {
     return BlocBuilder<HomeSettingBloc, HomeSettingState>(
       buildWhen: (p, c) => p.menuStatus != c.menuStatus,
       builder: (context, state) {
@@ -84,7 +97,10 @@ class FlowyNavigation extends StatelessWidget {
           );
           final theme = AppFlowyTheme.of(context);
           return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+            padding: EdgeInsets.only(
+              right: sidebarOnRight ? 0.0 : 8.0,
+              left: sidebarOnRight ? 8.0 : 0.0,
+            ),
             child: SizedBox(
               width: 24,
               height: 24,
@@ -103,9 +119,12 @@ class FlowyNavigation extends StatelessWidget {
                           child: FlowyIconButton(
                             width: 24,
                             onPressed: () {},
-                            icon: FlowySvg(
-                              FlowySvgs.double_back_arrow_m,
-                              color: theme.iconColorScheme.secondary,
+                            icon: Transform.flip(
+                              flipX: sidebarOnRight,
+                              child: FlowySvg(
+                                FlowySvgs.double_back_arrow_m,
+                                color: theme.iconColorScheme.secondary,
+                              ),
                             ),
                           ),
                         ),
@@ -113,7 +132,8 @@ class FlowyNavigation extends StatelessWidget {
                     ),
                   ),
                   Align(
-                    alignment: Alignment.topRight,
+                    alignment:
+                        sidebarOnRight ? Alignment.topLeft : Alignment.topRight,
                     child: NumberedRedDot.desktop(),
                   ),
                 ],

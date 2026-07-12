@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
@@ -20,6 +21,8 @@ import 'package:appflowy/workspace/application/favorite/prelude.dart';
 import 'package:appflowy/workspace/application/menu/sidebar_sections_bloc.dart';
 import 'package:appflowy/workspace/application/recent/cached_recent_service.dart';
 import 'package:appflowy/workspace/application/sidebar/billing/sidebar_plan_bloc.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/application/sidebar/space/space_bloc.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy/workspace/application/view/view_ext.dart';
@@ -83,139 +86,155 @@ class HomeSideBar extends StatelessWidget {
     //   +-- Public Or Private Section: control the sections of the workspace
     //   |
     //   +-- Trash Section
-    return BlocProvider(
-      create: (context) => SidebarPlanBloc()
-        ..add(SidebarPlanEvent.init(workspaceSetting.workspaceId, userProfile)),
-      child: BlocConsumer<UserWorkspaceBloc, UserWorkspaceState>(
-        listenWhen: (prev, curr) =>
-            prev.currentWorkspace?.workspaceId !=
-            curr.currentWorkspace?.workspaceId,
-        listener: (context, state) {
-          if (FeatureFlag.search.isOn) {
-            // Notify command palette that workspace has changed
-            context.read<CommandPaletteBloc>().add(
-                  CommandPaletteEvent.workspaceChanged(
-                    workspaceId: state.currentWorkspace?.workspaceId,
-                  ),
-                );
-          }
+    //
+    // Everything below is wrapped in a [Directionality] so that when the
+    // sidebar docks on the right (manually, or auto-following an RTL
+    // interface language), icon/text ordering and start/end alignment
+    // throughout the sidebar's own rows mirrors along with it — this is
+    // independent of the document-content RTL setting, which only
+    // affects text you type.
+    final sidebarOnRight = resolveSidebarOnRight(
+      context,
+      context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+    );
+    return Directionality(
+      textDirection:
+          sidebarOnRight ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+      child: BlocProvider(
+        create: (context) => SidebarPlanBloc()
+          ..add(
+              SidebarPlanEvent.init(workspaceSetting.workspaceId, userProfile)),
+        child: BlocConsumer<UserWorkspaceBloc, UserWorkspaceState>(
+          listenWhen: (prev, curr) =>
+              prev.currentWorkspace?.workspaceId !=
+              curr.currentWorkspace?.workspaceId,
+          listener: (context, state) {
+            if (FeatureFlag.search.isOn) {
+              // Notify command palette that workspace has changed
+              context.read<CommandPaletteBloc>().add(
+                    CommandPaletteEvent.workspaceChanged(
+                      workspaceId: state.currentWorkspace?.workspaceId,
+                    ),
+                  );
+            }
 
-          if (state.currentWorkspace != null) {
-            context.read<SidebarPlanBloc>().add(
-                  SidebarPlanEvent.changedWorkspace(
-                    workspaceId: state.currentWorkspace!.workspaceId,
-                  ),
-                );
-          }
+            if (state.currentWorkspace != null) {
+              context.read<SidebarPlanBloc>().add(
+                    SidebarPlanEvent.changedWorkspace(
+                      workspaceId: state.currentWorkspace!.workspaceId,
+                    ),
+                  );
+            }
 
-          // Re-initialize workspace-specific services
-          getIt<CachedRecentService>().reset();
-        },
-        // Rebuild the whole sidebar when the current workspace changes
-        buildWhen: (previous, current) =>
-            previous.currentWorkspace?.workspaceId !=
-            current.currentWorkspace?.workspaceId,
-        builder: (context, state) {
-          if (state.currentWorkspace == null) {
-            return const SizedBox.shrink();
-          }
+            // Re-initialize workspace-specific services
+            getIt<CachedRecentService>().reset();
+          },
+          // Rebuild the whole sidebar when the current workspace changes
+          buildWhen: (previous, current) =>
+              previous.currentWorkspace?.workspaceId !=
+              current.currentWorkspace?.workspaceId,
+          builder: (context, state) {
+            if (state.currentWorkspace == null) {
+              return const SizedBox.shrink();
+            }
 
-          final workspaceId = state.currentWorkspace?.workspaceId ??
-              workspaceSetting.workspaceId;
-          return MultiBlocProvider(
-            providers: [
-              BlocProvider.value(value: getIt<ActionNavigationBloc>()),
-              BlocProvider(
-                create: (_) => SidebarSectionsBloc()
-                  ..add(SidebarSectionsEvent.initial(userProfile, workspaceId)),
-              ),
-              BlocProvider(
-                create: (_) => SpaceBloc(
-                  userProfile: userProfile,
-                  workspaceId: workspaceId,
-                )..add(const SpaceEvent.initial(openFirstPage: false)),
-              ),
-            ],
-            child: MultiBlocListener(
-              listeners: [
-                BlocListener<SidebarSectionsBloc, SidebarSectionsState>(
-                  listenWhen: (p, c) =>
-                      p.lastCreatedRootView?.id != c.lastCreatedRootView?.id,
-                  listener: (context, state) => context.read<TabsBloc>().add(
-                        TabsEvent.openPlugin(
-                          plugin: state.lastCreatedRootView!.plugin(),
+            final workspaceId = state.currentWorkspace?.workspaceId ??
+                workspaceSetting.workspaceId;
+            return MultiBlocProvider(
+              providers: [
+                BlocProvider.value(value: getIt<ActionNavigationBloc>()),
+                BlocProvider(
+                  create: (_) => SidebarSectionsBloc()
+                    ..add(
+                        SidebarSectionsEvent.initial(userProfile, workspaceId)),
+                ),
+                BlocProvider(
+                  create: (_) => SpaceBloc(
+                    userProfile: userProfile,
+                    workspaceId: workspaceId,
+                  )..add(const SpaceEvent.initial(openFirstPage: false)),
+                ),
+              ],
+              child: MultiBlocListener(
+                listeners: [
+                  BlocListener<SidebarSectionsBloc, SidebarSectionsState>(
+                    listenWhen: (p, c) =>
+                        p.lastCreatedRootView?.id != c.lastCreatedRootView?.id,
+                    listener: (context, state) => context.read<TabsBloc>().add(
+                          TabsEvent.openPlugin(
+                            plugin: state.lastCreatedRootView!.plugin(),
+                          ),
                         ),
-                      ),
-                ),
-                BlocListener<SpaceBloc, SpaceState>(
-                  listenWhen: (prev, curr) =>
-                      prev.lastCreatedPage?.id != curr.lastCreatedPage?.id ||
-                      prev.isDuplicatingSpace != curr.isDuplicatingSpace,
-                  listener: (context, state) {
-                    final page = state.lastCreatedPage;
-                    if (page == null || page.id.isEmpty) {
-                      // open the blank page
-                      context
-                          .read<TabsBloc>()
-                          .add(TabsEvent.openPlugin(plugin: BlankPagePlugin()));
-                    } else {
-                      context.read<TabsBloc>().add(
-                            TabsEvent.openPlugin(
-                              plugin: state.lastCreatedPage!.plugin(),
-                            ),
-                          );
-                    }
-
-                    if (state.isDuplicatingSpace) {
-                      _duplicateSpaceLoading ??= Loading(context);
-                      _duplicateSpaceLoading?.start();
-                    } else if (_duplicateSpaceLoading != null) {
-                      _duplicateSpaceLoading?.stop();
-                      _duplicateSpaceLoading = null;
-                    }
-                  },
-                ),
-                BlocListener<ActionNavigationBloc, ActionNavigationState>(
-                  listenWhen: (_, curr) => curr.action != null,
-                  listener: _onNotificationAction,
-                ),
-                BlocListener<UserWorkspaceBloc, UserWorkspaceState>(
-                  listener: (context, state) {
-                    final actionType = state.actionResult?.actionType;
-
-                    if (actionType == WorkspaceActionType.create ||
-                        actionType == WorkspaceActionType.delete ||
-                        actionType == WorkspaceActionType.open) {
-                      if (context.read<SpaceBloc>().state.spaces.isEmpty) {
-                        context.read<SidebarSectionsBloc>().add(
-                              SidebarSectionsEvent.reload(
-                                userProfile,
-                                state.currentWorkspace?.workspaceId ??
-                                    workspaceSetting.workspaceId,
-                              ),
-                            );
+                  ),
+                  BlocListener<SpaceBloc, SpaceState>(
+                    listenWhen: (prev, curr) =>
+                        prev.lastCreatedPage?.id != curr.lastCreatedPage?.id ||
+                        prev.isDuplicatingSpace != curr.isDuplicatingSpace,
+                    listener: (context, state) {
+                      final page = state.lastCreatedPage;
+                      if (page == null || page.id.isEmpty) {
+                        // open the blank page
+                        context.read<TabsBloc>().add(
+                            TabsEvent.openPlugin(plugin: BlankPagePlugin()));
                       } else {
-                        context.read<SpaceBloc>().add(
-                              SpaceEvent.reset(
-                                userProfile,
-                                state.currentWorkspace?.workspaceId ??
-                                    workspaceSetting.workspaceId,
-                                true,
+                        context.read<TabsBloc>().add(
+                              TabsEvent.openPlugin(
+                                plugin: state.lastCreatedPage!.plugin(),
                               ),
                             );
                       }
 
-                      context
-                          .read<FavoriteBloc>()
-                          .add(const FavoriteEvent.fetchFavorites());
-                    }
-                  },
-                ),
-              ],
-              child: _Sidebar(userProfile: userProfile),
-            ),
-          );
-        },
+                      if (state.isDuplicatingSpace) {
+                        _duplicateSpaceLoading ??= Loading(context);
+                        _duplicateSpaceLoading?.start();
+                      } else if (_duplicateSpaceLoading != null) {
+                        _duplicateSpaceLoading?.stop();
+                        _duplicateSpaceLoading = null;
+                      }
+                    },
+                  ),
+                  BlocListener<ActionNavigationBloc, ActionNavigationState>(
+                    listenWhen: (_, curr) => curr.action != null,
+                    listener: _onNotificationAction,
+                  ),
+                  BlocListener<UserWorkspaceBloc, UserWorkspaceState>(
+                    listener: (context, state) {
+                      final actionType = state.actionResult?.actionType;
+
+                      if (actionType == WorkspaceActionType.create ||
+                          actionType == WorkspaceActionType.delete ||
+                          actionType == WorkspaceActionType.open) {
+                        if (context.read<SpaceBloc>().state.spaces.isEmpty) {
+                          context.read<SidebarSectionsBloc>().add(
+                                SidebarSectionsEvent.reload(
+                                  userProfile,
+                                  state.currentWorkspace?.workspaceId ??
+                                      workspaceSetting.workspaceId,
+                                ),
+                              );
+                        } else {
+                          context.read<SpaceBloc>().add(
+                                SpaceEvent.reset(
+                                  userProfile,
+                                  state.currentWorkspace?.workspaceId ??
+                                      workspaceSetting.workspaceId,
+                                  true,
+                                ),
+                              );
+                        }
+
+                        context
+                            .read<FavoriteBloc>()
+                            .add(const FavoriteEvent.fetchFavorites());
+                      }
+                    },
+                  ),
+                ],
+                child: _Sidebar(userProfile: userProfile),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -578,7 +597,10 @@ class _SidebarSearchButton extends StatelessWidget {
         },
         leftIcon: const FlowySvg(FlowySvgs.search_s),
         iconPadding: 12.0,
-        margin: const EdgeInsets.only(left: 8.0),
+        // Matches SidebarNewPageButton's margin so Search lines up
+        // with the other rows in the sidebar instead of sitting
+        // 4px further in.
+        margin: const EdgeInsets.only(left: 4.0),
         text: FlowyText.regular(LocaleKeys.search_label.tr()),
       ),
     );

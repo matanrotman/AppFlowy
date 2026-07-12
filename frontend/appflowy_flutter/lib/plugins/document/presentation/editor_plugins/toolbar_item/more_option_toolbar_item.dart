@@ -8,6 +8,7 @@ import 'package:appflowy/plugins/document/presentation/editor_plugins/desktop_to
 import 'package:appflowy/plugins/document/presentation/editor_plugins/plugins.dart';
 import 'package:appflowy/plugins/document/presentation/editor_style.dart';
 import 'package:appflowy/startup/startup.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
 // ignore: implementation_imports
@@ -88,7 +89,7 @@ class _MoreOptionActionListState extends State<MoreOptionActionList> {
   Widget build(BuildContext context) {
     return AppFlowyPopover(
       controller: popoverController,
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: documentPopoverDirection(context),
       offset: const Offset(0, 2.0),
       onOpen: () => keepEditorFocusNotifier.increase(),
       onClose: () {

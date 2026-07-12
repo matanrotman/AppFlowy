@@ -1,6 +1,8 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/util/theme_extension.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/application/sidebar/folder/folder_bloc.dart';
 import 'package:appflowy/workspace/application/sidebar/space/space_bloc.dart';
 import 'package:appflowy/workspace/application/view/view_bloc.dart';
@@ -498,7 +500,10 @@ class SpacePopup extends StatelessWidget {
       height: height ?? HomeSizes.workspaceSectionHeight,
       child: AppFlowyPopover(
         constraints: const BoxConstraints(maxWidth: 260),
-        direction: PopoverDirection.bottomWithLeftAligned,
+        direction: sidebarPopoverDirection(
+          context,
+          context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+        ),
         clickHandler: PopoverClickHandler.gestureDetector,
         offset: const Offset(0, 4),
         popupBuilder: (_) => BlocProvider.value(

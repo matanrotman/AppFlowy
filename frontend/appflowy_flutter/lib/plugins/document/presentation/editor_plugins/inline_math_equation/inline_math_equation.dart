@@ -1,4 +1,5 @@
 import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
@@ -39,7 +40,7 @@ class _InlineMathEquationState extends State<InlineMathEquation> {
     return _IgnoreParentPointer(
       child: AppFlowyPopover(
         controller: popoverController,
-        direction: PopoverDirection.bottomWithLeftAligned,
+        direction: documentPopoverDirection(context),
         popupBuilder: (_) {
           return MathInputTextField(
             initialText: widget.formula,

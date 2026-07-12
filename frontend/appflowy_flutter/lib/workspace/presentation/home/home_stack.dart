@@ -11,6 +11,8 @@ import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/util/theme_extension.dart';
 import 'package:appflowy/workspace/application/home/home_setting_bloc.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/home_sizes.dart';
 import 'package:appflowy/workspace/presentation/home/navigation.dart';
@@ -827,20 +829,39 @@ class _HomeTopBarState extends State<HomeTopBar>
           horizontal: HomeInsets.topBarTitleHorizontalPadding,
           vertical: HomeInsets.topBarTitleVerticalPadding,
         ),
-        child: Row(
-          children: [
-            HSpace(widget.layout.menuSpacing),
-            const FlowyNavigation(),
-            const HSpace(16),
-            ChangeNotifierProvider.value(
+        child: Builder(
+          builder: (context) {
+            final sidebarOnRight = resolveSidebarOnRight(
+              context,
+              context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+            );
+            final breadcrumb = const FlowyNavigation();
+            final rightBarItem = ChangeNotifierProvider.value(
               value: Provider.of<PageNotifier>(context, listen: false),
               child: Consumer(
                 builder: (_, PageNotifier notifier, __) =>
                     notifier.plugin.widgetBuilder.rightBarItem ??
                     const SizedBox.shrink(),
               ),
-            ),
-          ],
+            );
+            return Row(
+              children: [
+                // The macOS traffic lights are always physically
+                // top-left, so this reserve never moves — only the
+                // breadcrumb/actions groups swap sides.
+                HSpace(widget.layout.menuSpacing),
+                if (sidebarOnRight) ...[
+                  rightBarItem,
+                  const HSpace(16),
+                  breadcrumb,
+                ] else ...[
+                  breadcrumb,
+                  const HSpace(16),
+                  rightBarItem,
+                ],
+              ],
+            );
+          },
         ),
       ),
     );

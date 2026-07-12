@@ -39,7 +39,6 @@ import '../widgets/edit_panel/edit_panel.dart';
 import '../widgets/sidebar_resizer.dart';
 import 'home_layout.dart';
 import 'home_stack.dart';
-import 'menu/sidebar/slider_menu_hover_trigger.dart';
 
 class DesktopHomeScreen extends StatelessWidget {
   const DesktopHomeScreen({super.key});
@@ -191,10 +190,10 @@ class DesktopHomeScreen extends StatelessWidget {
       workspaceSetting: workspaceSetting,
     );
     final notificationPanel = NotificationPanel();
-    final sliderHoverTrigger = SliderMenuHoverTrigger();
 
-    final homeMenuResizer =
-        layout.showMenu ? const SidebarResizer() : const SizedBox.shrink();
+    final homeMenuResizer = layout.showMenu
+        ? SidebarResizer(sidebarOnRight: layout.sidebarOnRight)
+        : const SizedBox.shrink();
     final editPanel = _buildEditPanel(context, layout: layout);
 
     return _layoutWidgets(
@@ -205,7 +204,6 @@ class DesktopHomeScreen extends StatelessWidget {
       bubble: const QuestionBubble(),
       homeMenuResizer: homeMenuResizer,
       notificationPanel: notificationPanel,
-      sliderHoverTrigger: sliderHoverTrigger,
     );
   }
 
@@ -258,9 +256,14 @@ class DesktopHomeScreen extends StatelessWidget {
     required Widget bubble,
     required Widget homeMenuResizer,
     required Widget notificationPanel,
-    required Widget sliderHoverTrigger,
   }) {
     final isSliderbarShowing = layout.showMenu;
+    // When the sidebar docks right (manually, or auto-following an
+    // RTL interface language), every panel that used to assume
+    // "sidebar is on the left" mirrors to the opposite edge. The edit
+    // panel always docks opposite the sidebar so the two never
+    // contest the same corner.
+    final sidebarOnRight = layout.sidebarOnRight;
     return Stack(
       children: [
         homeStack
@@ -279,39 +282,58 @@ class DesktopHomeScreen extends StatelessWidget {
         editPanel
             .animatedPanelX(
               duration: layout.animDuration.inMilliseconds * 0.001,
-              closeX: layout.editPanelWidth,
+              closeX: sidebarOnRight
+                  ? -layout.editPanelWidth
+                  : layout.editPanelWidth,
               isClosed: !layout.showEditPanel,
               curve: Curves.easeOutQuad,
             )
             .positioned(
               top: 0,
-              right: 0,
+              left: sidebarOnRight ? 0 : null,
+              right: sidebarOnRight ? null : 0,
               bottom: 0,
               width: layout.editPanelWidth,
             ),
         notificationPanel
             .animatedPanelX(
-              closeX: -layout.notificationPanelWidth,
+              closeX: sidebarOnRight
+                  ? layout.notificationPanelWidth
+                  : -layout.notificationPanelWidth,
               isClosed: !layout.showNotificationPanel,
               curve: Curves.easeOutQuad,
               duration: layout.animDuration.inMilliseconds * 0.001,
             )
             .positioned(
-              left: isSliderbarShowing ? layout.menuWidth : 0,
+              left: sidebarOnRight
+                  ? null
+                  : (isSliderbarShowing ? layout.menuWidth : 0),
+              right: sidebarOnRight
+                  ? (isSliderbarShowing ? layout.menuWidth : 0)
+                  : null,
               top: isSliderbarShowing ? 0 : 52,
               width: layout.notificationPanelWidth,
               bottom: 0,
             ),
         sidebar
             .animatedPanelX(
-              closeX: -layout.menuWidth,
+              closeX: sidebarOnRight ? layout.menuWidth : -layout.menuWidth,
               isClosed: !isSliderbarShowing,
               curve: Curves.easeOutQuad,
               duration: layout.animDuration.inMilliseconds * 0.001,
             )
-            .positioned(left: 0, top: 0, width: layout.menuWidth, bottom: 0),
+            .positioned(
+              left: sidebarOnRight ? null : 0,
+              right: sidebarOnRight ? 0 : null,
+              top: 0,
+              width: layout.menuWidth,
+              bottom: 0,
+            ),
         homeMenuResizer
-            .positioned(left: layout.menuWidth)
+            .positioned(
+              left: sidebarOnRight ? null : layout.menuWidth,
+              right: sidebarOnRight ? layout.menuWidth : null,
+            )
             .animate(layout.animDuration, Curves.easeOutQuad),
       ],
     );

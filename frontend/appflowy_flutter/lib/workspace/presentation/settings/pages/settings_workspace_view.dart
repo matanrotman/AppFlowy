@@ -11,6 +11,7 @@ import 'package:appflowy/util/font_family_extension.dart';
 import 'package:appflowy/workspace/application/appearance_defaults.dart';
 import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy/workspace/application/settings/appearance/base_appearance.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/application/settings/date_time/date_format_ext.dart';
 import 'package:appflowy/workspace/application/settings/date_time/time_format_ext.dart';
 import 'package:appflowy/workspace/application/settings/workspace/workspace_settings_bloc.dart';
@@ -158,6 +159,13 @@ class SettingsWorkspaceView extends StatelessWidget {
                 title: LocaleKeys.settings_workspacePage_layoutDirection_title
                     .tr(),
                 children: const [_LayoutDirectionSelect()],
+              ),
+              const SettingsCategorySpacer(),
+
+              SettingsCategory(
+                title: LocaleKeys.settings_workspacePage_sidebarDockSide_title
+                    .tr(),
+                children: const [_SidebarDockSideSelect()],
               ),
               const SettingsCategorySpacer(),
 
@@ -492,6 +500,48 @@ class _LayoutDirectionSelect extends StatelessWidget {
                   .settings_workspacePage_layoutDirection_rightToLeft
                   .tr(),
               isSelected: state.layoutDirection == LayoutDirection.rtlLayout,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SidebarDockSideSelect extends StatelessWidget {
+  const _SidebarDockSideSelect();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AppearanceSettingsCubit, AppearanceSettingsState>(
+      builder: (context, state) {
+        final selectedItem = state.sidebarDockSide;
+
+        return SettingsRadioSelect<SidebarDockSide>(
+          onChanged: (item) => context
+              .read<AppearanceSettingsCubit>()
+              .setSidebarDockSide(item.value),
+          items: [
+            SettingsRadioItem(
+              value: SidebarDockSide.auto,
+              icon: const FlowySvg(FlowySvgs.textdirection_auto_m),
+              label:
+                  LocaleKeys.settings_workspacePage_sidebarDockSide_auto.tr(),
+              isSelected: selectedItem == SidebarDockSide.auto,
+            ),
+            SettingsRadioItem(
+              value: SidebarDockSide.left,
+              icon: const FlowySvg(FlowySvgs.textdirection_ltr_m),
+              label:
+                  LocaleKeys.settings_workspacePage_sidebarDockSide_left.tr(),
+              isSelected: selectedItem == SidebarDockSide.left,
+            ),
+            SettingsRadioItem(
+              value: SidebarDockSide.right,
+              icon: const FlowySvg(FlowySvgs.textdirection_rtl_m),
+              label:
+                  LocaleKeys.settings_workspacePage_sidebarDockSide_right.tr(),
+              isSelected: selectedItem == SidebarDockSide.right,
             ),
           ],
         );

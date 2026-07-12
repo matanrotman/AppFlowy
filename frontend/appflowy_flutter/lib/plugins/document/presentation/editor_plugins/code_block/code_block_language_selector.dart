@@ -2,6 +2,7 @@ import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/base/selectable_item_list_menu.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/base/string_extension.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/code_block/code_language_screen.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
 // ignore: implementation_imports
 import 'package:appflowy_editor/src/flutter/scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -94,7 +95,7 @@ class _CodeBlockLanguageSelectorState extends State<CodeBlockLanguageSelector> {
     if (UniversalPlatform.isDesktopOrWeb) {
       child = AppFlowyPopover(
         controller: controller,
-        direction: PopoverDirection.bottomWithLeftAligned,
+        direction: documentPopoverDirection(context),
         onOpen: widget.onMenuOpen,
         constraints: const BoxConstraints(maxHeight: 300, maxWidth: 200),
         onClose: widget.onMenuClose,

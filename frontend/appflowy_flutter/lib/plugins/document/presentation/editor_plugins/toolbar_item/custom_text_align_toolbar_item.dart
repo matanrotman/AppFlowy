@@ -2,6 +2,7 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/base/toolbar_extension.dart';
 import 'package:appflowy/plugins/document/presentation/editor_style.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -39,7 +40,7 @@ class TextAlignActionList extends StatefulWidget {
     this.child,
     this.onSelect,
     this.popoverController,
-    this.popoverDirection = PopoverDirection.bottomWithLeftAligned,
+    this.popoverDirection,
     this.showOffset = const Offset(0, 2),
   });
 
@@ -49,7 +50,11 @@ class TextAlignActionList extends StatefulWidget {
   final Widget? child;
   final VoidCallback? onSelect;
   final PopoverController? popoverController;
-  final PopoverDirection popoverDirection;
+
+  /// Defaults to [documentPopoverDirection], which mirrors for RTL
+  /// documents — pass an explicit value only to opt out (e.g. when
+  /// this list is nested as a submenu with its own fixed anchor).
+  final PopoverDirection? popoverDirection;
   final Offset showOffset;
 
   @override
@@ -76,7 +81,7 @@ class _TextAlignActionListState extends State<TextAlignActionList> {
   Widget build(BuildContext context) {
     return AppFlowyPopover(
       controller: popoverController,
-      direction: widget.popoverDirection,
+      direction: widget.popoverDirection ?? documentPopoverDirection(context),
       offset: widget.showOffset,
       onOpen: () => keepEditorFocusNotifier.increase(),
       onClose: () {

@@ -1,6 +1,8 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/shared/icon_emoji_picker/flowy_icon_emoji_picker.dart';
 import 'package:appflowy/shared/icon_emoji_picker/tab.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/application/sidebar/folder/folder_bloc.dart';
 import 'package:appflowy/workspace/application/sidebar/space/space_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/move_to/move_page_menu.dart';
@@ -41,7 +43,10 @@ class ViewMoreActionPopover extends StatelessWidget {
     final wrappers = _buildActionTypeWrappers();
     return PopoverActionList<ViewMoreActionTypeWrapper>(
       controller: controller,
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: sidebarPopoverDirection(
+        context,
+        context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+      ),
       offset: const Offset(0, 8),
       actions: wrappers,
       constraints: const BoxConstraints(minWidth: 260),

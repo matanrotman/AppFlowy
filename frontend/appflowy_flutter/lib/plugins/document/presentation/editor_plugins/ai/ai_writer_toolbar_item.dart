@@ -2,6 +2,7 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/plugins.dart';
 import 'package:appflowy/plugins/document/presentation/editor_style.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
@@ -59,7 +60,7 @@ class _AiWriterToolbarActionListState extends State<AiWriterToolbarActionList> {
   Widget build(BuildContext context) {
     return AppFlowyPopover(
       controller: popoverController,
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: documentPopoverDirection(context),
       offset: const Offset(0, 2.0),
       onOpen: () => keepEditorFocusNotifier.increase(),
       onClose: () {

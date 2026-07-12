@@ -8,12 +8,14 @@ import 'package:appflowy/user/application/user_settings_service.dart';
 import 'package:appflowy/util/color_to_hex_string.dart';
 import 'package:appflowy/workspace/application/appearance_defaults.dart';
 import 'package:appflowy/workspace/application/settings/appearance/base_appearance.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/date_time.pbenum.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_setting.pb.dart';
 import 'package:appflowy_editor/appflowy_editor.dart'
     show AppFlowyEditorLocalizations;
+import 'package:appflowy_popover/appflowy_popover.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra/theme.dart';
 import 'package:flutter/material.dart';
@@ -66,9 +68,11 @@ class AppearanceSettingsCubit extends Cubit<AppearanceSettingsState> {
                     ),
                   ),
             1.0,
+            SidebarDockSide.auto,
           ),
         ) {
     readTextScaleFactor();
+    readSidebarDockSideSetting();
   }
 
   final AppearanceSettingsPB _appearanceSettings;
@@ -93,6 +97,19 @@ class AppearanceSettingsCubit extends Cubit<AppearanceSettingsState> {
         ) ??
         1.0;
     emit(state.copyWith(textScaleFactor: textScaleFactor.clamp(0.7, 1.0)));
+  }
+
+  /// Sets which edge of the window the sidebar docks to. Persisted
+  /// locally only, like [setTextScaleFactor] — this is a per-device
+  /// UI preference, not synced content.
+  Future<void> setSidebarDockSide(SidebarDockSide side) async {
+    await saveSidebarDockSide(side);
+    emit(state.copyWith(sidebarDockSide: side));
+  }
+
+  Future<void> readSidebarDockSideSetting() async {
+    final side = await readSidebarDockSide();
+    emit(state.copyWith(sidebarDockSide: side));
   }
 
   /// Update selected theme in the user's settings and emit an updated state
@@ -344,6 +361,22 @@ enum LayoutDirection {
       : LayoutDirectionPB.LTRLayout;
 }
 
+/// Mirrors document popovers (slash menu, toolbar dropdowns, code
+/// language picker, etc.) that default to opening down-right, so
+/// they open down-left when the document's own layout direction is
+/// RTL. This follows the document's `LayoutDirection` setting, not
+/// the sidebar's dock side — see `sidebarPopoverDirection` for that;
+/// the two are intentionally independent (e.g. an English interface
+/// can still be used to write an RTL document).
+PopoverDirection documentPopoverDirection(BuildContext context) {
+  final isRTL =
+      context.watch<AppearanceSettingsCubit>().state.layoutDirection ==
+          LayoutDirection.rtlLayout;
+  return isRTL
+      ? PopoverDirection.bottomWithRightAligned
+      : PopoverDirection.bottomWithLeftAligned;
+}
+
 enum AppFlowyTextDirection {
   ltr,
   rtl,
@@ -396,6 +429,7 @@ class AppearanceSettingsState with _$AppearanceSettingsState {
     required Color? documentCursorColor,
     required Color? documentSelectionColor,
     required double textScaleFactor,
+    required SidebarDockSide sidebarDockSide,
   }) = _AppearanceSettingsState;
 
   factory AppearanceSettingsState.initial(
@@ -414,6 +448,7 @@ class AppearanceSettingsState with _$AppearanceSettingsState {
     Color? documentCursorColor,
     Color? documentSelectionColor,
     double textScaleFactor,
+    SidebarDockSide sidebarDockSide,
   ) {
     return AppearanceSettingsState(
       appTheme: appTheme,
@@ -431,6 +466,7 @@ class AppearanceSettingsState with _$AppearanceSettingsState {
       documentCursorColor: documentCursorColor,
       documentSelectionColor: documentSelectionColor,
       textScaleFactor: textScaleFactor,
+      sidebarDockSide: sidebarDockSide,
     );
   }
 

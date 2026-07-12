@@ -2,6 +2,8 @@ import 'dart:io' show Platform;
 import 'dart:math';
 
 import 'package:appflowy/workspace/application/home/home_setting_bloc.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:flowy_infra/size.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,14 +34,36 @@ class HomeLayout {
 
     showNotificationPanel = !homeSetting.isNotificationPanelCollapsed;
 
-    homePageLOffset = (showMenu && !menuIsDrawer) ? menuWidth : 0.0;
+    sidebarOnRight = resolveSidebarOnRight(
+      context,
+      context.read<AppearanceSettingsCubit>().state.sidebarDockSide,
+    );
 
-    menuSpacing = !showMenu && Platform.isMacOS ? 80.0 : 0.0;
+    // On macOS, the traffic-light window buttons are always painted
+    // top-left of the window, regardless of sidebar side. This 80px
+    // reserve keeps the content pane's own top bar from rendering
+    // under them — needed whenever the content pane's left edge sits
+    // at the window's physical left edge, which happens both when
+    // the sidebar is hidden AND when it's docked right (since then
+    // the content pane occupies the window's left side either way).
+    menuSpacing =
+        (!showMenu || sidebarOnRight) && Platform.isMacOS ? 80.0 : 0.0;
     animDuration = homeSetting.resizeType.duration();
     editPanelWidth = HomeSizes.editPanelWidth;
     notificationPanelWidth = MediaQuery.of(context).size.width -
         (showEditPanel ? editPanelWidth : 0);
-    homePageROffset = showEditPanel ? editPanelWidth : 0;
+
+    // The sidebar and the edit panel are always docked to opposite
+    // edges so they never contest the same corner of the window.
+    final menuOccupiedWidth = (showMenu && !menuIsDrawer) ? menuWidth : 0.0;
+    final editPanelOccupiedWidth = showEditPanel ? editPanelWidth : 0.0;
+    if (sidebarOnRight) {
+      homePageLOffset = editPanelOccupiedWidth;
+      homePageROffset = menuOccupiedWidth;
+    } else {
+      homePageLOffset = menuOccupiedWidth;
+      homePageROffset = editPanelOccupiedWidth;
+    }
   }
 
   late bool showEditPanel;
@@ -47,6 +71,7 @@ class HomeLayout {
   late bool showMenu;
   late bool menuIsDrawer;
   late bool showNotificationPanel;
+  late bool sidebarOnRight;
   late double homePageLOffset;
   late double menuSpacing;
   late Duration animDuration;

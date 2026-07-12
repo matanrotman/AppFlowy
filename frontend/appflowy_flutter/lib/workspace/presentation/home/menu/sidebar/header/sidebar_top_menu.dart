@@ -5,6 +5,8 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/workspace/application/home/home_setting_bloc.dart';
 import 'package:appflowy/workspace/application/menu/sidebar_sections_bloc.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/presentation/home/home_sizes.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -37,7 +39,12 @@ class SidebarTopMenu extends StatelessWidget {
             children: [
               _buildLogoIcon(context),
               const Spacer(),
-              _buildCollapseMenuButton(context),
+              Padding(
+                padding: const EdgeInsets.only(top: 12.0, right: 6.0),
+                child: SidebarCollapseButton(
+                  isSidebarOnHover: isSidebarOnHover,
+                ),
+              ),
             ],
           ),
         ),
@@ -63,8 +70,19 @@ class SidebarTopMenu extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildCollapseMenuButton(BuildContext context) {
+/// The sidebar's own collapse/expand toggle. Lives in [SidebarTopMenu]
+/// when the sidebar docks left; moves into the workspace toolbar row
+/// (next to "More options") when it docks right — see
+/// `sidebar_workspace.dart`.
+class SidebarCollapseButton extends StatelessWidget {
+  const SidebarCollapseButton({super.key, required this.isSidebarOnHover});
+
+  final ValueNotifier<bool> isSidebarOnHover;
+
+  @override
+  Widget build(BuildContext context) {
     final settingState = context.read<HomeSettingBloc?>()?.state;
     final isNotificationPanelCollapsed =
         settingState?.isNotificationPanelCollapsed ?? true;
@@ -85,22 +103,29 @@ class SidebarTopMenu extends StatelessWidget {
       ],
     );
     final theme = AppFlowyTheme.of(context);
+    final sidebarOnRight = resolveSidebarOnRight(
+      context,
+      context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+    );
 
     return ValueListenableBuilder(
       valueListenable: isSidebarOnHover,
       builder: (_, value, ___) => Opacity(
         opacity: value ? 1 : 0,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 12.0, right: 6.0),
-          child: FlowyTooltip(
-            richMessage: textSpan,
-            child: Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerDown: (_) =>
-                  context.read<HomeSettingBloc>().collapseMenu(),
-              child: FlowyHover(
-                child: SizedBox(
-                  width: 24,
+        child: FlowyTooltip(
+          richMessage: textSpan,
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) =>
+                context.read<HomeSettingBloc>().collapseMenu(),
+            child: FlowyHover(
+              child: SizedBox(
+                width: 24,
+                // The icon points toward the edge the sidebar will
+                // collapse away to, so it's mirrored when the
+                // sidebar docks on the right instead of the left.
+                child: Transform.flip(
+                  flipX: sidebarOnRight,
                   child: FlowySvg(
                     FlowySvgs.double_back_arrow_m,
                     color: theme.iconColorScheme.secondary,

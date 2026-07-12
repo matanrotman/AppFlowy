@@ -3,11 +3,14 @@ import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/plugins/document/document.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/startup/startup.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/import/import_panel.dart';
 import 'package:appflowy/workspace/presentation/widgets/pop_up_action.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ViewAddButton extends StatelessWidget {
   const ViewAddButton({
@@ -49,7 +52,10 @@ class ViewAddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopoverActionList<PopoverAction>(
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: sidebarPopoverDirection(
+        context,
+        context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+      ),
       actions: _actions,
       offset: const Offset(0, 8),
       constraints: const BoxConstraints(

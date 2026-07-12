@@ -4,7 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SidebarResizer extends StatefulWidget {
-  const SidebarResizer({super.key});
+  const SidebarResizer({super.key, this.sidebarOnRight = false});
+
+  /// When the sidebar docks on the right, dragging the handle toward
+  /// the left edge (not the right) is what widens it, so the raw
+  /// drag position needs to be mirrored before it reaches
+  /// [HomeSettingEvent.editPanelResized], which always expects
+  /// "bigger value = wider sidebar".
+  final bool sidebarOnRight;
 
   @override
   State<SidebarResizer> createState() => _SidebarResizerState();
@@ -41,9 +48,15 @@ class _SidebarResizerState extends State<SidebarResizer> {
         onHorizontalDragUpdate: (details) {
           isDragging.value = true;
 
+          // On the left dock, dragging right (positive dx) widens the
+          // sidebar. On the right dock the sidebar grows the opposite
+          // way, so the raw offset is mirrored before it's applied.
+          final offset = widget.sidebarOnRight
+              ? -details.localPosition.dx
+              : details.localPosition.dx;
           context
               .read<HomeSettingBloc>()
-              .add(HomeSettingEvent.editPanelResized(details.localPosition.dx));
+              .add(HomeSettingEvent.editPanelResized(offset));
         },
         onHorizontalDragEnd: (details) {
           isDragging.value = false;

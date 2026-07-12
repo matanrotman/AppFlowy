@@ -2,6 +2,8 @@ import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/shared/af_role_pb_extension.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/presentation/settings/widgets/members/workspace_member_bloc.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialog_v2.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
@@ -52,7 +54,10 @@ class _WorkspaceMoreActionListState extends State<WorkspaceMoreActionList> {
       return const SizedBox.shrink();
     }
     return PopoverActionList<_WorkspaceMoreActionWrapper>(
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: sidebarPopoverDirection(
+        context,
+        context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+      ),
       actions: actions
           .map(
             (action) => _WorkspaceMoreActionWrapper(

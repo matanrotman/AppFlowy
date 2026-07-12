@@ -3,6 +3,7 @@ import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/plugins/document/presentation/editor_page.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/desktop_toolbar/color_picker.dart';
 import 'package:appflowy/plugins/document/presentation/editor_style.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy_editor/appflowy_editor.dart' hide ColorPicker;
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -65,7 +66,7 @@ class _TextColorPickerWidgetState extends State<TextColorPickerWidget> {
         selectionRectList.isEmpty ? 0.0 : selectionRectList.first.height;
     return AppFlowyPopover(
       controller: popoverController,
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: documentPopoverDirection(context),
       offset: Offset(0, top),
       onOpen: () => keepEditorFocusNotifier.increase(),
       onClose: () {

@@ -5,6 +5,8 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/auth/auth_service.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/workspace/_sidebar_workspace_actions.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/workspace/_sidebar_workspace_icon.dart';
@@ -495,7 +497,10 @@ class WorkspaceMoreButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppFlowyPopover(
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: sidebarPopoverDirection(
+        context,
+        context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+      ),
       offset: const Offset(0, 6),
       mutex: popoverMutex,
       asBarrier: true,

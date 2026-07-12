@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
@@ -8,6 +9,8 @@ import 'package:appflowy/shared/icon_emoji_picker/tab.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/favorite/favorite_bloc.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/application/sidebar/folder/folder_bloc.dart';
 import 'package:appflowy/workspace/application/sidebar/rename_view/rename_view_bloc.dart';
 import 'package:appflowy/workspace/application/sidebar/space/space_bloc.dart';
@@ -633,7 +636,10 @@ class _SingleInnerViewItemState extends State<SingleInnerViewItem> {
         controller: popoverController,
         triggerActions: PopoverTriggerFlags.none,
         offset: const Offset(0, 5),
-        direction: PopoverDirection.bottomWithLeftAligned,
+        direction: sidebarPopoverDirection(
+          context,
+          context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+        ),
         popupBuilder: (_) => RenameViewPopover(
           view: widget.view,
           name: widget.view.name,
@@ -939,13 +945,20 @@ class ViewItemDefaultLeftIcon extends StatelessWidget {
       return HSpace(leftPadding);
     }
 
+    // The collapsed-state caret points toward where expanding reveals
+    // more content, so it mirrors along with the sidebar's own
+    // ambient Directionality (set once, at the sidebar root).
+    final isRTL = Directionality.of(context) == ui.TextDirection.rtl;
     final child = FlowyHover(
       child: GestureDetector(
-        child: FlowySvg(
-          isExpanded
-              ? FlowySvgs.view_item_expand_s
-              : FlowySvgs.view_item_unexpand_s,
-          size: const Size.square(16.0),
+        child: Transform.flip(
+          flipX: isRTL,
+          child: FlowySvg(
+            isExpanded
+                ? FlowySvgs.view_item_expand_s
+                : FlowySvgs.view_item_unexpand_s,
+            size: const Size.square(16.0),
+          ),
         ),
         onTap: () =>
             context.read<ViewBloc>().add(ViewEvent.setIsExpanded(!isExpanded)),

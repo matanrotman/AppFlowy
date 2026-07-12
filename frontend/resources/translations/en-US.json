@@ -690,6 +690,12 @@
         "leftToRight": "Left to right",
         "rightToLeft": "Right to left"
       },
+      "sidebarDockSide": {
+        "title": "Sidebar position",
+        "auto": "Auto (follow interface language)",
+        "left": "Left",
+        "right": "Right"
+      },
       "dateTime": {
         "title": "Date & time",
         "example": "{} at {} ({})",

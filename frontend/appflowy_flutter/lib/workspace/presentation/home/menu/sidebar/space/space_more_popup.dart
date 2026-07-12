@@ -4,6 +4,8 @@ import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/shared/af_role_pb_extension.dart';
 import 'package:appflowy/shared/icon_emoji_picker/flowy_icon_emoji_picker.dart';
 import 'package:appflowy/shared/icon_emoji_picker/tab.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/application/sidebar/space/space_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/space_action_type.dart';
 import 'package:appflowy/workspace/presentation/widgets/pop_up_action.dart';
@@ -32,7 +34,10 @@ class SpaceMorePopup extends StatelessWidget {
   Widget build(BuildContext context) {
     final wrappers = _buildActionTypeWrappers();
     return PopoverActionList<SpaceMoreActionTypeWrapper>(
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: sidebarPopoverDirection(
+        context,
+        context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+      ),
       offset: const Offset(0, 8),
       actions: wrappers,
       constraints: const BoxConstraints(

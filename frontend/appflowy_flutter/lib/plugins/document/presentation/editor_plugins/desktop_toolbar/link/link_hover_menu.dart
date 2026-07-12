@@ -14,6 +14,7 @@ import 'package:appflowy/plugins/document/presentation/editor_plugins/mobile_too
 import 'package:appflowy/plugins/document/presentation/editor_plugins/toolbar_item/custom_link_toolbar_item.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/util/theme_extension.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
@@ -170,7 +171,7 @@ class _LinkHoverTriggerState extends State<LinkHoverTrigger> {
     final currentViewId = context.read<DocumentBloc?>()?.documentId ?? '';
     return AppFlowyPopover(
       controller: editMenuController,
-      direction: PopoverDirection.bottomWithLeftAligned,
+      direction: documentPopoverDirection(context),
       offset: Offset(0, 0),
       onOpen: () => keepEditorFocusNotifier.increase(),
       onClose: () => keepEditorFocusNotifier.decrease(),

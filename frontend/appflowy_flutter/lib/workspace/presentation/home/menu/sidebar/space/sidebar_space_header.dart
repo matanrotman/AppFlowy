@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/shared/icon_emoji_picker/flowy_icon_emoji_picker.dart';
 import 'package:appflowy/shared/icon_emoji_picker/icon_picker.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/application/sidebar/space/space_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/home_sizes.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/manage_space_popup.dart';
@@ -71,6 +73,15 @@ class _SidebarSpaceHeaderState extends State<SidebarSpaceHeader> {
   }
 
   Widget _buildSpaceName(bool isHovered) {
+    // This row is built with hardcoded, physical Positioned offsets
+    // (not directional), so unlike most of the sidebar it doesn't
+    // mirror automatically with the ambient Directionality — the
+    // switcher and the manage/add-page icon group need to explicitly
+    // swap sides when the sidebar docks right.
+    final sidebarOnRight = resolveSidebarOnRight(
+      context,
+      context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+    );
     return Container(
       height: HomeSizes.workspaceSectionHeight,
       decoration: BoxDecoration(
@@ -83,10 +94,10 @@ class _SidebarSpaceHeaderState extends State<SidebarSpaceHeader> {
           ValueListenableBuilder(
             valueListenable: onEditing,
             builder: (context, onEditing, child) => Positioned(
-              left: 3,
+              left: sidebarOnRight ? (isHovered || onEditing ? 88 : 0) : 3,
+              right: sidebarOnRight ? 3 : (isHovered || onEditing ? 88 : 0),
               top: 3,
               bottom: 3,
-              right: isHovered || onEditing ? 88 : 0,
               child: SpacePopup(
                 showCreateButton: true,
                 child: _buildChild(isHovered),
@@ -94,7 +105,8 @@ class _SidebarSpaceHeaderState extends State<SidebarSpaceHeader> {
             ),
           ),
           Positioned(
-            right: 4,
+            left: sidebarOnRight ? 4 : null,
+            right: sidebarOnRight ? null : 4,
             child: _buildRightIcon(isHovered),
           ),
         ],

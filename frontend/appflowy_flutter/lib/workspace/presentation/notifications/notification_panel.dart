@@ -4,6 +4,8 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/user/application/reminder/reminder_bloc.dart';
 import 'package:appflowy/workspace/application/home/home_setting_bloc.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
@@ -50,13 +52,23 @@ class _NotificationPanelState extends State<NotificationPanel>
   Widget build(BuildContext context) {
     final settingBloc = context.read<HomeSettingBloc>();
     final theme = AppFlowyTheme.of(context);
+    // The outer box this Align sits in already spans (nearly) the
+    // full window width and is otherwise direction-aware — but this
+    // inner Align was still hardcoded to the window's left edge, so
+    // the visible panel stayed pinned there even when the sidebar
+    // (and the bell that opens this panel) moved to the right.
+    final sidebarOnRight = resolveSidebarOnRight(
+      context,
+      context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+    );
     return GestureDetector(
       onTap: () =>
           settingBloc.add(HomeSettingEvent.collapseNotificationPanel()),
       child: Container(
         color: Colors.transparent,
         child: Align(
-          alignment: Alignment.centerLeft,
+          alignment:
+              sidebarOnRight ? Alignment.centerRight : Alignment.centerLeft,
           child: GestureDetector(
             onTap: () {},
             child: Container(

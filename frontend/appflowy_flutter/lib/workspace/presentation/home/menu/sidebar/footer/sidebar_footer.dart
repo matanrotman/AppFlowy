@@ -8,9 +8,12 @@ import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/footer/sidebar_toast.dart';
 import 'package:appflowy/workspace/presentation/settings/widgets/setting_appflowy_cloud.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/settings/appearance/sidebar_dock_side.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra/theme_extension.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'sidebar_footer_button.dart';
 
@@ -19,6 +22,12 @@ class SidebarFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sidebarOnRight = resolveSidebarOnRight(
+      context,
+      context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
+    );
+    final templates = const Expanded(child: SidebarTemplateButton());
+    final trash = const Expanded(child: SidebarTrashButton());
     return Column(
       children: [
         if (FeatureFlag.planBilling.isOn)
@@ -29,11 +38,9 @@ class SidebarFooter extends StatelessWidget {
           ),
         Row(
           // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Expanded(child: SidebarTemplateButton()),
-            _buildVerticalDivider(context),
-            const Expanded(child: SidebarTrashButton()),
-          ],
+          children: sidebarOnRight
+              ? [trash, _buildVerticalDivider(context), templates]
+              : [templates, _buildVerticalDivider(context), trash],
         ),
       ],
     );
