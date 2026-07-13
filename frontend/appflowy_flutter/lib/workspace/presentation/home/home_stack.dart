@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:appflowy/core/frameless_window.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
@@ -835,13 +836,28 @@ class _HomeTopBarState extends State<HomeTopBar>
               context,
               context.watch<AppearanceSettingsCubit>().state.sidebarDockSide,
             );
-            final breadcrumb = const FlowyNavigation();
-            final rightBarItem = ChangeNotifierProvider.value(
-              value: Provider.of<PageNotifier>(context, listen: false),
-              child: Consumer(
-                builder: (_, PageNotifier notifier, __) =>
-                    notifier.plugin.widgetBuilder.rightBarItem ??
-                    const SizedBox.shrink(),
+            final breadcrumb = Directionality(
+              textDirection:
+                  sidebarOnRight ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+              child: const FlowyNavigation(),
+            );
+            // The breadcrumb (space > page > access scope) and the action
+            // buttons (user avatar, share, favorite, more options) both
+            // read in the app's normal left-to-right order internally by
+            // default; mirror that order too when the sidebar (and so the
+            // whole chrome) docks right, so each group reads consistently
+            // with the rest of the RTL chrome instead of only swapping
+            // which edge the two groups sit on.
+            final rightBarItem = Directionality(
+              textDirection:
+                  sidebarOnRight ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+              child: ChangeNotifierProvider.value(
+                value: Provider.of<PageNotifier>(context, listen: false),
+                child: Consumer(
+                  builder: (_, PageNotifier notifier, __) =>
+                      notifier.plugin.widgetBuilder.rightBarItem ??
+                      const SizedBox.shrink(),
+                ),
               ),
             );
             return Row(

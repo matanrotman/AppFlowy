@@ -192,8 +192,16 @@ class NaviItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The breadcrumb itself is narrower than the space Expanded reserves
+    // for it, so without this it always hugs the leading edge of that
+    // space — i.e. away from a right-docked sidebar, leaving a dead gap
+    // next to it. Anchor it to the edge the sidebar actually docks to.
+    final isRTL = Directionality.of(context) == ui.TextDirection.rtl;
     return Expanded(
-      child: item.leftBarItem.padding(horizontal: 2, vertical: 2),
+      child: Align(
+        alignment: isRTL ? Alignment.centerRight : Alignment.centerLeft,
+        child: item.leftBarItem.padding(horizontal: 2, vertical: 2),
+      ),
     );
   }
 }

@@ -596,7 +596,8 @@ class _SidebarSearchButton extends StatelessWidget {
           );
         },
         leftIcon: const FlowySvg(FlowySvgs.search_s),
-        iconPadding: 12.0,
+        leftIconSize: const Size.square(24.0),
+        iconPadding: 8.0,
         // Matches SidebarNewPageButton's margin so Search lines up
         // with the other rows in the sidebar instead of sitting
         // 4px further in.

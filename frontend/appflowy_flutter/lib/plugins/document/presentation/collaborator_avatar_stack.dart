@@ -28,11 +28,16 @@ class CollaboratorAvatarStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The stack is always the first item before the share button in the
+    // top bar's action group, so it should hug whichever of its own
+    // edges sits next to that button — the end edge, in whatever
+    // direction the row is currently flowing.
+    final isRTL = Directionality.of(context) == TextDirection.rtl;
     final settings = this.settings ??
         RestrictedPositions(
           maxCoverage: 0.4,
           minCoverage: 0.3,
-          align: StackAlign.right,
+          align: isRTL ? StackAlign.left : StackAlign.right,
           laying: StackLaying.first,
         );
 

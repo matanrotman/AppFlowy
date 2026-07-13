@@ -612,7 +612,9 @@ class _SingleInnerViewItemState extends State<SingleInnerViewItem> {
       child: SizedBox(
         height: widget.height,
         child: Padding(
-          padding: EdgeInsets.only(left: widget.level * widget.leftPadding),
+          padding: EdgeInsetsDirectional.only(
+            start: widget.level * widget.leftPadding,
+          ),
           child: Listener(
             onPointerDown: (event) {
               if (event.buttons == kSecondaryMouseButton &&

@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:appflowy/features/page_access_level/logic/page_access_level_bloc.dart';
 import 'package:appflowy/features/share_tab/data/models/share_section_type.dart';
 import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
@@ -106,6 +108,17 @@ class ViewTitleBar extends StatelessWidget {
     );
   }
 
+  // Points toward the direction the breadcrumb chain reads in, so it
+  // mirrors along with the ambient RTL direction set by the sidebar
+  // dock side (see NaviItemWidget in navigation.dart).
+  Widget _buildDividerIcon(BuildContext context) {
+    final isRTL = Directionality.of(context) == ui.TextDirection.rtl;
+    return Transform.flip(
+      flipX: isRTL,
+      child: const FlowySvg(FlowySvgs.title_bar_divider_s),
+    );
+  }
+
   Widget _buildLockPageStatus(BuildContext context) {
     return BlocConsumer<PageAccessLevelBloc, PageAccessLevelState>(
       listenWhen: (previous, current) =>
@@ -172,7 +185,7 @@ class ViewTitleBar extends StatelessWidget {
           hasAddedEllipsis = true;
           children.addAll([
             const FlowyText.regular(' ... '),
-            const FlowySvg(FlowySvgs.title_bar_divider_s),
+            _buildDividerIcon(context),
           ]);
         }
         continue;
@@ -200,7 +213,7 @@ class ViewTitleBar extends StatelessWidget {
 
       if (i != views.length - 1) {
         // if not the last one, add a divider
-        children.add(const FlowySvg(FlowySvgs.title_bar_divider_s));
+        children.add(_buildDividerIcon(context));
       }
     }
 
@@ -222,7 +235,7 @@ class ViewTitleBar extends StatelessWidget {
   List<Widget> _buildDeletedTitle(BuildContext context, ViewPB view) {
     return [
       const TrashBreadcrumb(),
-      const FlowySvg(FlowySvgs.title_bar_divider_s),
+      _buildDividerIcon(context),
       FlowyTooltip(
         key: ValueKey(view.id),
         message: view.name,

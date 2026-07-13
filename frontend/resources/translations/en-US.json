@@ -691,7 +691,7 @@
         "rightToLeft": "Right to left"
       },
       "sidebarDockSide": {
-        "title": "Sidebar position",
+        "title": "Interface layout",
         "auto": "Auto (follow interface language)",
         "left": "Left",
         "right": "Right"
