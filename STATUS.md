@@ -2,15 +2,16 @@
 
 *The current snapshot only — replace sections when they change, don't append to them. Detailed history lives in each feature's spec, under its own "Session Log."*
 
-**Last updated:** 2026-07-12
+**Last updated:** 2026-07-13
 
 ## Active feature
-RTL/LTR support (`specs/rtl-support.md`) — Phase 1 (app chrome direction) is implemented and has been through two rounds of live testing/fixes. Meeting transcription (`specs/meeting-transcription.md`) is still queued, untouched.
+RTL/LTR support (`specs/rtl-support.md`) — Phase 1 (app chrome direction) is **implemented, live-tested, and committed** (`5d856b3f7`, plus the foundational `cea574bef`). Meeting transcription (`specs/meeting-transcription.md`) is still queued, untouched.
 
 ## Where things stand
 - Repo is forked (`origin` = matanrotman/AppFlowy) and cloned, with `upstream` = AppFlowy-IO/AppFlowy.
 - **Upstream sync (checked 2026-07-12):** local `main` is fully in sync with `upstream/main` — 0 commits behind, and already contains the latest release tag 0.12.5. Nothing to merge. A weekly automated check runs every Sunday 8:00 AM (report-only, no auto-merge).
-- **Sidebar RTL Phase 1 (this session's work, uncommitted):** the sidebar can now dock left or right, either manually or auto-following the interface language, via Settings > Workspace > "Sidebar position". Also fixed, across two rounds of user testing: collapse/expand icon direction, resize-handle drag math, footer (Trash/Templates) order, popover open-direction throughout the sidebar (and extended into ~10 in-document popovers, keyed off the document's own RTL setting), the notification bell panel position, the content-pane top toolbar (breadcrumb vs. more-options/favorite/share/active-users) mirroring, and a macOS traffic-light/breadcrumb overlap bug. Full file list and rationale in `specs/rtl-support.md`'s Session Log. **Not yet committed or manually re-verified after the last rebuild** — that's the next step.
+- **Sidebar RTL Phase 1 — committed and signed off.** The sidebar docks left or right, manually or auto-following the interface language, via Settings > Workspace > **"Interface layout"** (renamed this session from "Sidebar position" now that it also governs the top bar; kept distinct from the existing, unrelated "Layout direction" setting which controls document editor popovers). A live-testing pass surfaced and fixed: sidebar search icon size/alignment, nested-page indent direction, the top bar's breadcrumb/action-button group edge-anchoring and internal mirroring, the breadcrumb divider chevron direction, the collaborator-avatar anchor position, and user-avatar-to-Share spacing. Full rationale and file list in `specs/rtl-support.md`'s Session Log.
+- **Uncommitted, left alone on purpose:** `frontend/appflowy_flutter/macos/Podfile.lock` has a one-line local diff (CocoaPods version stamp, `1.16.2` → `1.17.0`) from running the macOS build on this machine. Harmless, unrelated to the feature, user asked to leave it uncommitted.
 - **Project location moved**: the repo now lives at `~/Projects/AppFlowy`, not inside Google Drive. It was originally cloned into the Google Drive-synced folder, which caused severe build slowdowns (Drive fighting the build for CPU/disk while re-syncing hundreds of thousands of small build files). Moved out with git history and remotes intact; the old Drive copy was deleted.
 - Local macOS build is confirmed working end-to-end: `flutter run -d macos` builds and launches AppFlowy (Rust core + Flutter UI), reaching the welcome/login screen.
 - Toolchain installed on this Mac:
@@ -23,7 +24,7 @@ RTL/LTR support (`specs/rtl-support.md`) — Phase 1 (app chrome direction) is i
 - Code generation (locale keys + freezed models) must be run before `flutter run` works: `cargo make code_generation` (from `frontend/`). Skipping it causes real compile errors (`LocaleKeys` undefined, switch-exhaustiveness errors).
 
 ## Next step
-User to re-test the latest rebuild (sidebar reorder, traffic-light fix, toolbar mirroring, extended popover directions) and report anything still off. Once Phase 1 is signed off as done, commit the work, then decide whether to start Phase 2 (document-content RTL) or switch to meeting transcription.
+Decide whether to start Phase 2 (document-content RTL) or switch to meeting transcription.
 
 ## Open questions
 - Phase 2 (document content RTL) still has two open questions from the original spec: should per-block direction be fully automatic or overridable, and how should mixed RTL/LTR lines visually behave?
