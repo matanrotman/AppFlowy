@@ -2,10 +2,15 @@
 
 *The current snapshot only — replace sections when they change, don't append to them. Detailed history lives in each feature's spec, under its own "Session Log."*
 
-**Last updated:** 2026-07-14 (round 2, same day)
+**Last updated:** 2026-07-14 (round 2, session end)
 
 ## Active feature
-RTL/LTR support (`specs/rtl-support.md`) — Phase 1 is done and signed off. Phase 2 (document-content direction) is **mostly done**: auto-detect direction, bidi, block-insert menu direction, and the icon-margin gap (30px, user-confirmed live) are solid. **Two bugs remain genuinely open**: the floating toolbar (a *different*, deeper root cause than the first "fix" addressed — a debounce race, now also fixed, but the user hasn't yet re-confirmed live) and the multi-run mid-character cursor bug (unchanged, still needs a reference or live judgment call). **One bug regressed on further investigation and was reverted rather than shipped unstable**: the empty-RTL-line-cursor / "creating a new line has a very far cursor" bug — two fix attempts this round each looked solid in isolation but broke a different scenario when checked more broadly; both were reverted, findings documented in code, genuinely unresolved.
+RTL/LTR support (`specs/rtl-support.md`) — Phase 1 is done and signed off. Phase 2 (document-content direction) is **mostly done**: auto-detect direction, bidi, block-insert menu direction, and the icon-margin gap (30px, user-confirmed live) are solid.
+
+**Three bugs remain genuinely open — none of these are done, don't start a live check assuming otherwise:**
+- **Floating toolbar — NOT FIXED YET.** A code fix landed this round (a debounce race, a different/deeper root cause than round 1's fix), but the test written for it doesn't actually fail against the old broken code, so it isn't proven — treat as unconfirmed until checked live.
+- **Empty-line cursor ("creating a new line has a very far cursor") — NOT FIXED YET.** Two fix attempts this round, both reverted after each broke a different scenario than the one it was built for. Root cause is understood; the fix isn't. Needs a live repro next time before another attempt.
+- **Multi-run mid-character cursor bug — NOT FIXED YET.** Unchanged this round. Needs a reference implementation or a live judgment call on one specific anomalous case.
 
 ## Where things stand
 - Repo is forked (`origin` = matanrotman/AppFlowy) and cloned, with `upstream` = AppFlowy-IO/AppFlowy.
