@@ -99,7 +99,7 @@ packages:
     description:
       path: "."
       ref: rtl-direction-aware-selection-menu
-      resolved-ref: b4f1339053e201982e817a7c269dcd16d5b26004
+      resolved-ref: "2a9d9dafd4b6071c7aa16e6fe8b19e2bfd999414"
       url: "https://github.com/matanrotman/appflowy-editor.git"
     source: git
     version: "5.2.0"
