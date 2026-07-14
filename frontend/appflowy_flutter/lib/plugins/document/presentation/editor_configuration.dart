@@ -241,6 +241,11 @@ void _customBlockOptionActions(
         // block_component_action_wrapper_test.dart. Whether 12px specifically
         // *looks* right is a visual call worth a glance next time this is
         // on screen; nudge this one constant if not.
+        //
+        // TODO(next session): user checked live on 2026-07-15 and still
+        // finds 12px too tight — bump this to 30px (~35px total) at the
+        // start of the next session, then get a live look before treating
+        // it as settled.
         return const SizedBox(width: 12);
       };
 
