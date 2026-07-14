@@ -118,8 +118,17 @@ Future<bool> _showSlashMenu(
             deleteKeywordsByDefault: deleteKeywordsByDefault,
             singleColumn: singleColumn,
             style: style,
-            menuDirection:
-                node.selectable?.textDirection() ?? TextDirection.ltr,
+            // Compute the direction straight from the node/document state
+            // rather than `node.selectable?.textDirection()` — that getter
+            // falls back silently to LTR whenever the block's rich-text
+            // widget hasn't resolved a mounted state yet (its own
+            // `DefaultSelectableMixin.textDirection()` fallback), which is
+            // exactly the situation right after opening this menu.
+            menuDirection: calculateNodeDirection(
+              node: node,
+              layoutDirection: Directionality.of(context),
+              defaultTextDirection: editorState.editorStyle.defaultTextDirection,
+            ),
           );
 
     // disable the keyboard service
