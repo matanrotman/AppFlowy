@@ -3,6 +3,7 @@ import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:flutter/material.dart';
 
+import 'selection_extent_rect.dart';
 import 'toolbar_animation.dart';
 
 class DesktopFloatingToolbar extends StatefulWidget {
@@ -36,9 +37,15 @@ class _DesktopFloatingToolbarState extends State<DesktopFloatingToolbar> {
     if (selection == null || selection.isCollapsed) {
       return;
     }
-    final selectionRect = editorState.selectionRects();
-    if (selectionRect.isEmpty) return;
-    position = calculateSelectionMenuOffset(selectionRect.first);
+    // Anchor to the selection's extent (where the user's cursor actually
+    // is right now), not its start — using selectionRects().first here
+    // used to always pick the start, regardless of which direction the
+    // user dragged, so the toolbar appeared back where the selection began
+    // instead of near where the user currently is (most noticeable when
+    // the selection requires scrolling).
+    final extentRect = selectionExtentRect(editorState);
+    if (extentRect == null) return;
+    position = calculateSelectionMenuOffset(extentRect);
     toolbarController._addCallback(dismiss);
   }
 
