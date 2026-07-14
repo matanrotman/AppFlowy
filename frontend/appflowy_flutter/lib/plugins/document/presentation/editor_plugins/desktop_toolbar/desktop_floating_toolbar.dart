@@ -37,6 +37,7 @@ class _DesktopFloatingToolbarState extends State<DesktopFloatingToolbar> {
     if (selection == null || selection.isCollapsed) {
       return;
     }
+    toolbarController._addCallback(dismiss);
     // Anchor to the selection's extent (where the user's cursor actually
     // is right now), not its start — using selectionRects().first here
     // used to always pick the start, regardless of which direction the
@@ -44,21 +45,27 @@ class _DesktopFloatingToolbarState extends State<DesktopFloatingToolbar> {
     // instead of near where the user currently is (most noticeable when
     // the selection requires scrolling).
     //
-    // NOT CONFIRMED WORKING (found 2026-07-15, live in the real app): user
-    // reports the toolbar still isn't landing correctly after this fix.
-    // The unit test added this same session
-    // (test/unit_test/document/editor_plugins/desktop_toolbar/
-    // selection_extent_rect_test.dart) only exercises selectionExtentRect()
-    // directly with a synthetic 3-paragraph document and passes -- it does
-    // not pump DesktopFloatingToolbar itself, so it can't catch a wiring
-    // problem between this widget and the helper, a scroll-position issue,
-    // or anything specific to how the real app invokes this. Next session:
-    // reproduce live first, with a selection that genuinely requires
-    // scrolling, before assuming the helper function itself is at fault.
-    final extentRect = selectionExtentRect(editorState);
-    if (extentRect == null) return;
-    position = calculateSelectionMenuOffset(extentRect);
-    toolbarController._addCallback(dismiss);
+    // FIXED (2026-07-14, confirmed via a widget test that pumps this
+    // widget for real: desktop_floating_toolbar_test.dart): the bug
+    // wasn't in selectionExtentRect's math, it was a timing issue. This
+    // widget is recreated inside a fresh OverlayEntry whenever the outer
+    // FloatingToolbar's scroll-offset listener fires, using a
+    // Duration.zero (synchronous) debounce — so a scroll event can
+    // recreate this widget in the very same frame the scroll happens.
+    // initState() runs during that frame's BUILD phase, which happens
+    // BEFORE its LAYOUT phase — so reading render-object geometry
+    // (selectionExtentRect -> localToGlobal) synchronously here reads
+    // whatever layout was left over from the PREVIOUS frame, not the
+    // freshly-scrolled position. Deferring to a post-frame callback reads
+    // it only after this frame's layout has actually settled.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final extentRect = selectionExtentRect(editorState);
+      if (extentRect == null) return;
+      setState(() {
+        position = calculateSelectionMenuOffset(extentRect);
+      });
+    });
   }
 
   @override
