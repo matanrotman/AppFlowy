@@ -13,17 +13,23 @@ Don't start coding from a one-line request. Interview me first: ask about scope,
 ## Starting a session
 Read `STATUS.md` first, before anything else. Give me a short plain-language recap of where things stand and what you're about to do, and confirm with me before continuing. I can also say "catch me up" at any point to trigger this on demand.
 
+Also run the fork-sync check from "Fork maintenance" below — it's cheap, and drift is easy to miss otherwise.
+
 If we're resuming a specific feature, name the session after it (`claude -n rtl-support`, or `/rename rtl-support` once inside) so Claude Code's own session list stays organized the same way the specs folder is.
 
 ## Ending a session
 When I say "wrap up," "end session," or similar, before we stop:
 1. Update `STATUS.md` — replace the outdated parts, don't just append. It should always reflect *right now*, not a history.
 2. Add a dated entry to the "Session Log" at the bottom of whichever `specs/<feature-name>.md` we worked on.
-3. If there's uncommitted work, suggest a commit so the code and the docs move together.
+3. Re-run the fork-sync check from "Fork maintenance" below one more time — a fix made mid-session can move a fork's HEAD past what's currently pinned.
+4. If there's uncommitted work, suggest a commit so the code and the docs move together.
 
 ## Fork maintenance (applies across every feature)
 - Isolate new functionality into new files/modules where possible instead of editing core files, to keep future merges with upstream low-conflict. Where you must touch shared/core files, say so and explain why.
-- My fork is `origin`; AppFlowy-IO/AppFlowy is `upstream`. Merge from upstream on a regular cadence, prefer tagged releases over the bleeding `main` branch, and flag fixes that look upstream-worthy — anything accepted there is something I stop maintaining myself.
+- My fork is `origin`; AppFlowy-IO/AppFlowy is `upstream`. Merge from upstream on a regular cadence, prefer tagged releases over the bleeding `main` branch, and flag fixes that look upstream-worthy — anything accepted there is something I stop maintaining myself. The same applies to any other fork this project depends on (e.g. the editor package fork) — each one has its own `upstream` and needs the same care.
+- **Fork-sync check** (run at both the start and end of every session, not just when something breaks): for this repo and for any other fork this project depends on (e.g. `~/Projects/appflowy-editor-fork`), confirm two things aren't drifted:
+  1. **Fork vs. its own upstream**: `git fetch upstream && git rev-list --count main..upstream/main` (commits behind) and the reverse (commits ahead). Just report the numbers — no action needed unless something changed materially or it's grown enough to be worth a dedicated merge session.
+  2. **Pin vs. actual pushed HEAD**: if this repo pins another fork via a git dependency (e.g. `pubspec.yaml`'s `appflowy_editor` entry), confirm the lockfile's resolved commit (`pubspec.lock`'s `resolved-ref`) still matches `git rev-parse <branch>` on that fork's actual pushed branch. If it's drifted, re-run the relevant `pub upgrade` before trusting anything about that dependency's current behavior. This exact drift (a commit made and pushed to a fork, but the pin never re-synced) has silently caused wasted work more than once — code comments described fixes that weren't actually running in the app being tested.
 - Follow the existing codebase's conventions (Dart/Flutter style, lints, Rust idioms). Don't introduce new patterns or dependencies without explaining the trade-off.
 
 ## Non-negotiables
