@@ -231,22 +231,16 @@ void _customBlockOptionActions(
         }
         // A gap between the hover controls (drag handle, "+") and the
         // block's text — without it the icons sit close enough to the first
-        // word to interfere with clicking/selecting it. The original 4px
-        // was too subtle to notice: it sits on top of an existing ~5px gap
-        // in BlockActionList's own trailing HSpace (block_action_list.dart),
-        // next to 18-24px icons, for ~9px total. 12px brings the total to
-        // ~17px. The vendored editor package has a test confirming this
-        // value becomes a real, undiminished layout gap (not swallowed by
+        // word to interfere with clicking/selecting it. It sits on top of an
+        // existing ~5px gap in BlockActionList's own trailing HSpace
+        // (block_action_list.dart), next to 18-24px icons, for ~35px total.
+        // 4px and 12px were both tried and found too tight on a live check.
+        // The vendored editor package has a test confirming this value
+        // becomes a real, undiminished layout gap (not swallowed by
         // anything) — see appflowy-editor's
-        // block_component_action_wrapper_test.dart. Whether 12px specifically
-        // *looks* right is a visual call worth a glance next time this is
-        // on screen; nudge this one constant if not.
-        //
-        // TODO(next session): user checked live on 2026-07-15 and still
-        // finds 12px too tight — bump this to 30px (~35px total) at the
-        // start of the next session, then get a live look before treating
-        // it as settled.
-        return const SizedBox(width: 12);
+        // block_component_action_wrapper_test.dart. Still pending a live
+        // look at 30px specifically before treating it as settled.
+        return const SizedBox(width: 30);
       };
 
       builder.actionBuilder = (context, state) {
