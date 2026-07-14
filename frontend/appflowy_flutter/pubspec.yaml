@@ -184,8 +184,12 @@ dependency_overrides:
 
   appflowy_editor:
     git:
-      url: https://github.com/AppFlowy-IO/appflowy-editor.git
-      ref: "470c4e7"
+      # Forked from AppFlowy-IO/appflowy-editor @ 470c4e7 to add
+      # direction-aware positioning for the block-insert ("+") menu in RTL
+      # blocks — see specs/rtl-support.md Phase 2. Upstream has no hook for
+      # this today; re-evaluate switching back if/when it gains one.
+      url: https://github.com/matanrotman/appflowy-editor.git
+      ref: "rtl-direction-aware-selection-menu"
 
   appflowy_editor_plugins:
     git:

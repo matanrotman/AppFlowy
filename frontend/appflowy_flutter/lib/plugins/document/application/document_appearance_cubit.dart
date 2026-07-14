@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:appflowy/core/config/kv_keys.dart';
 import 'package:appflowy/plugins/document/presentation/editor_style.dart';
 import 'package:appflowy/util/color_to_hex_string.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart'
+    show AppFlowyTextDirection;
 import 'package:appflowy/workspace/application/settings/appearance/base_appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -79,8 +81,14 @@ class DocumentAppearanceCubit extends Cubit<DocumentAppearance> {
         prefs.getDouble(KVKeys.kDocumentAppearanceFontSize) ?? 16.0;
     final fontFamily = prefs.getString(KVKeys.kDocumentAppearanceFontFamily) ??
         defaultFontFamily;
+    // No preference stored yet (fresh install / never touched this
+    // setting) — default to "auto" so block direction follows what's
+    // typed (RTL Phase 2), matching the same default used for the
+    // Settings > Workspace radio selection (see appearance_cubit.dart's
+    // fromTextDirectionPB).
     final defaultTextDirection =
-        prefs.getString(KVKeys.kDocumentAppearanceDefaultTextDirection);
+        prefs.getString(KVKeys.kDocumentAppearanceDefaultTextDirection) ??
+            AppFlowyTextDirection.auto.name;
 
     final cursorColorString =
         prefs.getString(KVKeys.kDocumentAppearanceCursorColor);
@@ -109,7 +117,9 @@ class DocumentAppearanceCubit extends Cubit<DocumentAppearance> {
         defaultTextDirection: defaultTextDirection,
         cursorColorIsNull: cursorColor == null,
         selectionColorIsNull: selectionColor == null,
-        textDirectionIsNull: defaultTextDirection == null,
+        // defaultTextDirection always has a value now (falls back to
+        // "auto" above), so textDirectionIsNull is left at its false
+        // default — it's never explicitly cleared here.
         width: width,
       ),
     );

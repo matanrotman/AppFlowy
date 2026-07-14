@@ -229,7 +229,10 @@ void _customBlockOptionActions(
             height: 24,
           );
         }
-        return const SizedBox.shrink();
+        // A small gap between the hover controls (drag handle, "+") and the
+        // block's text — without it the icons sit close enough to the first
+        // word to interfere with clicking/selecting it.
+        return const SizedBox(width: 4);
       };
 
       builder.actionBuilder = (context, state) {

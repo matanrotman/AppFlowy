@@ -393,7 +393,11 @@ enum AppFlowyTextDirection {
       case TextDirectionPB.AUTO:
         return AppFlowyTextDirection.auto;
       default:
-        return AppFlowyTextDirection.ltr;
+        // No preference stored yet (fresh install / never touched this
+        // setting) — default to Auto so block direction follows what's
+        // typed (RTL Phase 2), matching Google Docs/Notion-style behavior,
+        // rather than assuming left-to-right.
+        return AppFlowyTextDirection.auto;
     }
   }
 

@@ -118,6 +118,8 @@ Future<bool> _showSlashMenu(
             deleteKeywordsByDefault: deleteKeywordsByDefault,
             singleColumn: singleColumn,
             style: style,
+            menuDirection:
+                node.selectable?.textDirection() ?? TextDirection.ltr,
           );
 
     // disable the keyboard service
