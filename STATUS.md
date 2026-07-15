@@ -40,7 +40,7 @@ Three process rules that came out of it, all now essential:
 - **Fork-sync (checked 2026-07-15):** app `main` 0 behind / 20 ahead of `upstream/main`. Editor fork branch `rtl-direction-aware-selection-menu` is **36 behind, 10 ahead** of its own upstream (`AppFlowy-IO/appflowy-editor`, which has tagged 6.1.0; our pin still reports 5.2.0). Pin ↔ pushed-HEAD: **in sync** (`ba6c4fcb`).
 - **Editor fork upstream merge — DEFERRED to a dedicated session.** 36 commits behind + a major version jump touching the exact files we edit; too risky to fold into a bug-fix session.
 - **The user's dock app now runs the fixed code with their real data — confirmed live by the user** ("everything's back", cursor fix works). Done by rebuilding the debug app in place (`flutter build macos --debug`), which is what the dock icon points at.
-- **Data backup taken 2026-07-15** at `~/Desktop/AppFlowy_data_backup_backup_20260715_0925` (6.2M — all four data folders) before touching anything. Safe to delete once the user is confident.
+- **Data backup taken 2026-07-15** at `~/Desktop/AppFlowy_data_backup_backup_20260715_0925` (6.2M — all four data folders) before touching anything. **Keep it until the cloud-sync question (Next step #1) is settled** — if recent work is local-only, this backup is currently the only second copy.
 - **Incident history (still governs live testing):** a 2026-07-13 live-drag test corrupted a real user document. Rule since: all live typing/selecting/dragging happens in a disposable scratch page, never in existing content.
 - Local build confirmed working: `flutter run -d macos` and `flutter build macos --debug` (the dock app). A release build also compiles, but it is **not** the user's app — see rule 2 above.
 - Toolchain (unchanged): Rust rustup w/ pinned 1.85 + stable default; `cargo-make` + `duckscript_cli` (`duck`); **Flutter 3.27.4** git-cloned at `~/flutter` (not Homebrew); CocoaPods/sqlite3/protobuf via Homebrew.
@@ -48,9 +48,10 @@ Three process rules that came out of it, all now essential:
 - Code generation before `flutter run`: `cargo make code_generation` (from `frontend/`).
 
 ## Next step
-1. **Mid-character cursor bug** — capture a real-render screenshot of the caret right after the comma in an embedded date, get the user's judgment on correct placement, fix to match, un-skip the `caret_bidi_test.dart` case.
-2. **Editor-fork upstream merge** — dedicated session: merge `6.1.0`/upstream into `rtl-direction-aware-selection-menu` in an isolated worktree, resolve conflicts preserving the ~10 RTL commits, re-run the real-target tests as the regression net, re-pin.
-3. **Consider automating the two footguns** this session exposed: (a) auto-clear the `path_location` pref after integration tests, (b) a one-liner "ship it to the dock app" step (`flutter build macos --debug`) so fixes always reach the app the user actually uses.
+1. **Cloud sync — investigate (user asked for this, 2026-07-15).** The user's real workspace (`data_dev_beta.appflowy.cloud`, debug build) holds their current pages, but the release-build cache of *the same cloud workspace* (`data_beta.appflowy.cloud`, workspace id `612287731153768448`) was noticeably sparser — which suggests recent work may be **local-only and not fully pushed to AppFlowy Cloud**. Nothing was lost and this is unrelated to the RTL bugs, but it means the cloud copy may not be a reliable backup. Worth checking: is sync actually running/succeeding for this workspace; does the account show the same content on another client/the web; are there pending/failed sync ops. Do this **before** deleting the safety backup below.
+2. **Mid-character cursor bug** — capture a real-render screenshot of the caret right after the comma in an embedded date, get the user's judgment on correct placement, fix to match, un-skip the `caret_bidi_test.dart` case.
+3. **Editor-fork upstream merge** — dedicated session: merge `6.1.0`/upstream into `rtl-direction-aware-selection-menu` in an isolated worktree, resolve conflicts preserving the ~10 RTL commits, re-run the real-target tests as the regression net, re-pin.
+4. **Consider automating the two footguns** this session exposed: (a) auto-clear the `path_location` pref after integration tests, (b) a one-liner "ship it to the dock app" step (`flutter build macos --debug`) so fixes always reach the app the user actually uses.
 
 ## Open questions
 - Sharing-scope badge / workspace icon in the content-pane toolbar — user deferred (out of scope for now).

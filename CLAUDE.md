@@ -32,6 +32,15 @@ When I say "wrap up," "end session," or similar, before we stop:
   2. **Pin vs. actual pushed HEAD**: if this repo pins another fork via a git dependency (e.g. `pubspec.yaml`'s `appflowy_editor` entry), confirm the lockfile's resolved commit (`pubspec.lock`'s `resolved-ref`) still matches `git rev-parse <branch>` on that fork's actual pushed branch. If it's drifted, re-run the relevant `pub upgrade` before trusting anything about that dependency's current behavior. This exact drift (a commit made and pushed to a fork, but the pin never re-synced) has silently caused wasted work more than once — code comments described fixes that weren't actually running in the app being tested.
 - Follow the existing codebase's conventions (Dart/Flutter style, lints, Rust idioms). Don't introduce new patterns or dependencies without explaining the trade-off.
 
+## Verifying a fix actually works (learned the hard way — 2026-07-15)
+Three bugs stayed "open" across four sessions because of *how* they were verified, not because they were hard. All three rules below are non-optional; the details live in `STATUS.md`.
+- **Never trust headless `flutter test` for anything visual/geometric.** It forces a fixed-width fake font that collapses RTL text geometry, so RTL caret/position bugs are literally invisible to it — fixes "passed" for sessions while the app stayed broken. Verify on the real target: `flutter test integration_test/... -d macos`. (Even there, `selectionRects()` can mis-report the caret; measure the rendered `Cursor` widget.)
+- **A fix isn't done until it's in the app I actually use.** My dock app is the **debug** build at `frontend/appflowy_flutter/build/macos/Build/Products/Debug/AppFlowy.app` (verify via the Dock plist, don't infer it). Ship a fix with `flutter build macos --debug`, which rebuilds *in place* at that path — then tell me to re-open it. Don't assume a release build or `/Applications`; that targets a different data folder and made my pages look missing.
+- **⚠️ Clean up after integration tests, every time.** They write a test data-path into my *real* app preferences (shared across builds by bundle id), which makes my app open an empty sandbox and show a **blank window** — indistinguishable from a broken build. Always run afterwards:
+  `defaults delete com.appflowy.appflowy.flutter flutter.io.appflowy.appflowy_flutter.path_location`
+- **Reproduce with my real settings, not defaults.** A bug I hit constantly was unreproducible for hours because tests defaulted to `auto` text direction while my app is set to `rtl`. If something won't reproduce, check my actual settings/prefs on disk before concluding the code is fine.
+- **Before touching my data or app bundles**: back up first, and use `ditto` (not `cp -R`) for `.app` bundles — `cp -R` corrupts their code signatures.
+
 ## Non-negotiables
 - Never run destructive git operations (force-push, history rewrite, hard reset) without asking first and explaining what would be lost.
 - Never hardcode credentials, tokens, or server connection details into code — use local config/environment variables and walk me through that setup.
