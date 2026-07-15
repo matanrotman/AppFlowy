@@ -2,57 +2,58 @@
 
 *The current snapshot only — replace sections when they change, don't append to them. Detailed history lives in each feature's spec, under its own "Session Log."*
 
-**Last updated:** 2026-07-14 (round 2, session end)
+**Last updated:** 2026-07-15 (empty-line cursor FIXED + confirmed live; stale-build root cause found)
 
 ## Active feature
-RTL/LTR support (`specs/rtl-support.md`) — Phase 1 is done and signed off. Phase 2 (document-content direction) is **mostly done**: auto-detect direction, bidi, block-insert menu direction, and the icon-margin gap (30px, user-confirmed live) are solid.
+RTL/LTR support (`specs/rtl-support.md`). Phase 1 (sidebar) done and signed off. Phase 2 (document-content direction) is in good shape: auto-detect direction, bidi, block-insert menu direction, icon-margin gap, and now the **empty-line cursor** are all done.
 
-**Three bugs remain genuinely open — none of these are done, don't start a live check assuming otherwise:**
-- **Floating toolbar — NOT FIXED YET.** A code fix landed this round (a debounce race, a different/deeper root cause than round 1's fix), but the test written for it doesn't actually fail against the old broken code, so it isn't proven — treat as unconfirmed until checked live.
-- **Empty-line cursor ("creating a new line has a very far cursor") — NOT FIXED YET.** Two fix attempts this round, both reverted after each broke a different scenario than the one it was built for. Root cause is understood; the fix isn't. Needs a live repro next time before another attempt.
-- **Multi-run mid-character cursor bug — NOT FIXED YET.** Unchanged this round. Needs a reference implementation or a live judgment call on one specific anomalous case.
+## The big finding this session (read this first)
+**Several "still broken" bugs were actually already fixed — the user was testing a STALE dock app.** The floating toolbar is the clearest case: it works in a fresh build, and was only broken in the user's installed app because that app predates the fix. This very likely explains the whole multi-session loop: **our fixes were real but never reached the app the user actually tests in.**
+
+Two process rules that came out of it, both now essential:
+1. **Verify against the REAL macOS render path, never headless `flutter test`.** Run `flutter test integration_test/desktop/document/<file>.dart -d macos`. Plain `flutter test` forces a fixed-width fake font (Ahem) that collapses RTL glyph geometry, so RTL caret/position bugs are invisible to it — this is why prior headless "fixes" went green while the app stayed broken. (It gets worse: even on the real target, `editorState.selectionRects()` mis-reports the caret for the shrink-wrapped empty RTL block — measure the actual rendered `Cursor` widget's global rect instead.)
+2. **The user runs a RELEASE build; dev builds are a different workspace.** Data dirs (macOS): `flutter run` (debug) → `…/com.appflowy.appflowy.flutter/data_dev*`; a release build → `…/data*`; integration tests → a throwaway `.sandbox`. The user's real pages are in `data_beta.appflowy.cloud` (release + AppFlowy Cloud). So a `flutter run` app does NOT show their pages, and only a **release** build lands fixes on their real workspace.
+
+## Bug status
+- **Empty-line cursor ("creating a new line has a very far cursor") — FIXED, confirmed live by the user.** Root cause was the user's setting **`kDocumentAppearanceDefaultTextDirection = rtl`** (document default direction RTL). That made every empty line RTL while showing the LTR English "Type '/'…" placeholder, and two stacked bugs stranded the caret/text far left:
+  1. The empty-line caret resolved to logical offset 0 of the LTR placeholder run (its *left* end). The old "correction" was a permanent no-op (it read `_renderParagraph.size.width`, a real 0.0 for empty text, before the placeholder width in a `??` chain). Fixed by SETTING the caret dx to the placeholder paragraph's own (right-aligned) width — the RTL start.
+  2. Typing then "jumped left" because the invisible placeholder was kept full-width, inflating the right-aligned RTL block so real text rendered a placeholder-width left of the content edge. Fixed by collapsing the placeholder to an empty span (keeps line height, takes no width) when the line has text.
+  Both fixes are in the editor fork's `appflowy_rich_text.dart`. Committed: fork `ba6c4fcb`, app `6ff1967c4`, pin resynced (no drift). Real-target regression test: `integration_test/desktop/document/document_rtl_empty_caret_test.dart`.
+- **Floating selection toolbar — WORKING in current code; earlier "broken" was the stale dock app.** User confirmed it works in a fresh build. No new code needed. (The debounce-split fix from a prior session was real; it just never reached the user's stale app.)
+- **Mid-character cursor in embedded dates — DEFERRED to next session** (user's choice). Deterministic repro is already encoded in the fork's `caret_bidi_test.dart` skipped test. Blocker is an *oracle* — the user needs to look at the one anomalous boundary (right after the comma in an embedded date like `20.4.26,`) and say what "correct" is. Plan next time: capture a real-render screenshot of that spot, get the user's judgment, then fix to match.
 
 ## Where things stand
-- Repo is forked (`origin` = matanrotman/AppFlowy) and cloned, with `upstream` = AppFlowy-IO/AppFlowy.
-- **Upstream sync (checked 2026-07-14):** `main` fully in sync with `upstream/main` — 0 behind, 11 ahead (our RTL work). Nothing to merge.
-- **A second fork exists and needs its own upkeep**: the editor package is forked to `matanrotman/appflowy-editor` (branch `rtl-direction-aware-selection-menu`), pinned in `pubspec.yaml`, needed because the block-insert menu's positioning logic has no direction-awareness hook upstream. **This fork's branch is 36 commits behind, 5 ahead of its own upstream (`AppFlowy-IO/appflowy-editor` `main`)** as of the last check — real, growing debt, not yet scheduled to address (would be a dedicated session, not a side task). The app-side pin (`pubspec.lock`'s resolved-ref) had drifted from the fork branch's actual pushed HEAD twice before this session — the recurring landmine. **`CLAUDE.md` now has a standing fork-sync checklist** (added and committed this session, `1cba23476`) covering both axes at session start and end, specifically to stop this recurring going forward. Kept in sync correctly this round: fork committed+pushed first, pin re-synced after, in that order both times.
-- **Sidebar RTL Phase 1 — committed and signed off.** The sidebar docks left or right, manually or auto-following the interface language, via Settings > Workspace > **"Interface layout"**. Full rationale and file list in `specs/rtl-support.md`'s Session Log.
-- **Document RTL Phase 2 — status as of 2026-07-14 (two fix rounds this date):**
-  - Auto-detect block direction (first-strong-character, like Google Docs) and mixed-direction Unicode bidi — implemented, verified working. Solid.
-  - Block-insert ("+"/slash) menu direction — implemented via the editor fork (`03719b8a`), with a headless test confirming LTR/RTL genuinely resolve differently. Not flagged as broken by the user. A separate, unrelated finding — clicking "+" on an existing non-empty block creates a new block below rather than opening the menu in place — turned out to be existing, by-design editor behavior (Notion-style "+"), not a bug.
-  - **Icon-margin gap — bumped to 30px, user confirmed live: "looks ok now." Done.**
-  - **Floating selection toolbar — still not working after round 1's fix; a different, deeper root cause found and fixed in round 2, live glance still pending.** Round 1 fixed a real timing bug in `DesktopFloatingToolbar.initState()` (stale pre-layout geometry read) but the user re-tested live and it was still landing at the selection's *start* instead of its *end*. Round 2 investigated the real drag-gesture code directly (not another guess) and found `Selection.end` genuinely does track live drag position correctly — the actual bug is a **debounce race in the outer `FloatingToolbar` wrapper** (pre-existing upstream file, not RTL-specific): scroll-offset changes (firing every frame during auto-scroll) and selection changes shared one debounce key, so a `Duration.zero` scroll tick could silently cancel a pending, more-authoritative 200ms selection-driven show, with nothing to reconcile afterward. Fixed by splitting the debounce keys and deferring the scroll-triggered show to a post-frame callback. A test drives the *real* `FloatingToolbar` → `DesktopFloatingToolbar` wiring (not a bypass) — **honestly, it doesn't fail against the pre-fix code** (a single `jumpTo()` + settle doesn't recreate a real drag's continuous, never-settling scroll-tick stream), so confidence rests on the code reasoning, not a proven failing-first test. Genuinely needs the user's live re-check this time.
-  - **Cursor renders mid-character inside a date embedded in a long mixed sentence — still genuinely open, not force-closed.** Unchanged this round. Root cause: most apparent "jumps" at bidi run boundaries match an already-validated design rule, but one narrower case (right after a trailing comma exits an embedded run) resolves inconsistently with that rule, and a fix attempt produced byte-identical output to the existing code — the inconsistency sits inside Flutter's own bidi run classification. Documented via an honestly-`skip`ped test. Needs a reference implementation or the user's live judgment call.
-  - **Cursor far from typing position on an empty RTL line ("creating a new line has a very far cursor") — still open; two fix attempts this round, both reverted.** Root cause confirmed with high confidence: the correction's `contentWidth ?? ... ?? 0` chain never falls through (0.0 isn't null), so it's been a permanent no-op. Fixing it properly proved much harder than that diagnosis suggested: (1) a `LayoutBuilder`-captured max-width fixed plain paragraphs but overshot by ~600px for headings, whose `Row`+`Flexible`+`MainAxisSize.min` layout resolves the text's own render origin completely differently; (2) deriving the true content-area right edge from the widget's own outer RenderBox gave a *consistent* right edge across both paragraph and heading layouts (genuinely promising), but then broke the pre-existing "caret near a just-typed character" tests instead — once real (non-empty) RTL text is typed, its position didn't clearly match "the right edge" either, and it's unclear whether that's a further bug or a test-environment Hebrew-glyph-shaping quirk. Both attempts reverted rather than ship something unstable; full findings documented directly in `appflowy_rich_text.dart` for the next attempt, which should start with a *live* look at the actual repro (pressing Enter) rather than another headless guess.
-  - **This round's verification approach**: per the user's explicit instruction not to drive their screen, everything was investigated/fixed via headless `flutter test`. The floating-toolbar investigation went back to reading the real gesture-handling code directly (not assuming) after round 1's fix turned out to only address one of two real bugs — a Plan sub-agent's proposed test design was also caught and corrected (it relied on `getBlockRect()`, which throws `UnimplementedError` in this class) before being trusted.
-  - Separate, unscoped finding (not actively re-checked, logged for later): a block created via Enter-split from an RTL sibling stays RTL even when pure English is then typed into it. Likely improved by prior sessions' more robust direction lookup and covered by existing fork tests — worth a quick confirmation next time this comes up.
-- **`Podfile.lock` CocoaPods version bump is committed** (`ca128648d`, 1.16.2 → 1.17.0) — no longer an uncommitted loose end.
-- **Working tree clean as of this session's close** — both rounds' work committed and pushed, fork-then-pin-then-app order followed correctly both times (fork: `91dc7cfc`..`2a9d9daf` across two rounds; app: pin refreshes + icon-gap fix + toolbar fixes + `CLAUDE.md` checklist, ending at `1cba23476`).
-- **Incident history**: a live-testing session on 2026-07-13 caused unintended content changes in a real, populated user document during click-drag testing; user fixed it manually. Process fix adopted since: all live UI testing (typing/selecting/dragging) happens in a disposable scratch page created for that purpose, never in existing content.
-- Local macOS build is confirmed working end-to-end: `flutter run -d macos` builds and launches AppFlowy (Rust core + Flutter UI), reaching the welcome/login screen and into documents.
-- Toolchain installed on this Mac:
-  - Rust via rustup, with the pinned `1.85` toolchain (`frontend/rust-toolchain.toml`) plus a `stable` default toolchain (needed to build `cargo-make`/`duckscript_cli`, which require newer rustc than 1.85).
-  - `cargo-make` and `duckscript_cli` (binary name `duck`) via `cargo install`.
-  - Flutter **3.27.4** installed via `git clone` at `~/flutter` (not Homebrew — Homebrew's cask installs the latest Flutter, e.g. 3.44, whose `leak_tracker` version conflicts with AppFlowy's pinned dependency).
-  - CocoaPods, sqlite3, protobuf via Homebrew.
-  - `~/.config` ownership was fixed (was root-owned, blocking Flutter) — required a manual `sudo chown` from the user.
-- Rust build must be run with the correct cargo-make profile: `cargo make --profile development-mac-arm64 appflowy-core-dev-macos` (from `frontend/`). Without `--profile`, `TARGET_OS` isn't set and the post-build copy step fails even though compilation succeeds.
-- Code generation (locale keys + freezed models) must be run before `flutter run` works: `cargo make code_generation` (from `frontend/`). Skipping it causes real compile errors (`LocaleKeys` undefined, switch-exhaustiveness errors).
+- Repo forked (`origin` = matanrotman/AppFlowy), `upstream` = AppFlowy-IO/AppFlowy.
+- **Fork-sync (checked 2026-07-15):** app `main` 0 behind / 20 ahead of `upstream/main`. Editor fork branch `rtl-direction-aware-selection-menu` is **36 behind, 10 ahead** of its own upstream (`AppFlowy-IO/appflowy-editor`, which has tagged 6.1.0; our pin still reports 5.2.0). Pin ↔ pushed-HEAD: **in sync** (`ba6c4fcb`).
+- **Editor fork upstream merge — DEFERRED to a dedicated session.** 36 commits behind + a major version jump touching the exact files we edit; too risky to fold into a bug-fix session.
+- **A release build is being produced this session** so the user can swap their dock app to the fixed code while keeping their pages (same `data_beta.appflowy.cloud` workspace). See "Next step".
+- **Incident history (still governs live testing):** a 2026-07-13 live-drag test corrupted a real user document. Rule since: all live typing/selecting/dragging happens in a disposable scratch page, never in existing content.
+- Local build confirmed working: `flutter run -d macos` (debug) and now a release build too.
+- Toolchain (unchanged): Rust rustup w/ pinned 1.85 + stable default; `cargo-make` + `duckscript_cli` (`duck`); **Flutter 3.27.4** git-cloned at `~/flutter` (not Homebrew); CocoaPods/sqlite3/protobuf via Homebrew.
+- Rust core (dev): `cargo make --profile development-mac-arm64 appflowy-core-dev-macos` (from `frontend/`). Release core: `cargo make --profile production-mac-arm64 appflowy-core-release`.
+- Code generation before `flutter run`: `cargo make code_generation` (from `frontend/`).
 
 ## Next step
-1. **Live glance, using a disposable scratch page**: specifically the floating toolbar after a selection that requires scrolling — this is the one fix from this session with real (code-level) confidence but no test that actually proves the race is closed, so it genuinely needs eyes on it, not just "closing the loop."
-2. **Empty-RTL-line cursor ("creating a new line has a very far cursor")**: still open after two reverted fix attempts this round. Start with a *live* repro (press Enter after an RTL line, note exactly what's wrong) before another headless attempt — both this round's attempts looked solid against the scenario they were built for and wrong against a different one, and a live source of truth would catch that early instead of after the fact. Full investigation notes are in `appflowy_rich_text.dart`.
-3. **Mid-character cursor bug**: still open, unchanged this round. Needs either a reference implementation to compare bidi caret placement against, or the user's live judgment on what "correct" should look like at the one confirmed anomalous boundary (documented in `appflowy_rich_text.dart` and the `skip`ped test in `caret_bidi_test.dart`) — not another blind fix attempt.
-4. Editor fork is 36 commits behind its own upstream as of the last check — not urgent, but worth a dedicated look eventually.
+1. **Finish the release build + swap the user's dock app** (in progress). Build the release macOS app from the fixed code (pin `ba6c4fcb`), then walk the user through pointing their dock at `build/macos/Build/Products/Release/AppFlowy.app` (their `data_beta.appflowy.cloud` workspace is untouched — same data folder). This is what makes the fixes real for daily use and stops the stale-build loop.
+2. **Mid-character cursor bug** — capture a real-render screenshot of the caret right after the comma in an embedded date, get the user's judgment on correct placement, fix to match, un-skip the `caret_bidi_test.dart` case.
+3. **Editor-fork upstream merge** — dedicated session: merge `6.1.0`/upstream into `rtl-direction-aware-selection-menu` in an isolated worktree, resolve conflicts preserving the ~10 RTL commits, re-run the real-target tests as the regression net, re-pin.
 
 ## Open questions
-- Whether to build out a "who has access" sharing-scope badge and a workspace icon/name in the content-pane toolbar — user explicitly deferred this (not existing UI, out of scope for now) but may revisit.
-- `specs/tables.md` (RTL table paste) exists as a written spec but is untouched — not scheduled yet.
+- Sharing-scope badge / workspace icon in the content-pane toolbar — user deferred (out of scope for now).
+- `specs/tables.md` (RTL table paste) — written spec, untouched, not scheduled.
 
 ## Local build quick-reference
-Run from `~/Projects/AppFlowy/frontend`, with `~/flutter/bin`, `~/.cargo/bin`, and `~/.pub-cache/bin` on PATH:
+Run from `~/Projects/AppFlowy/frontend`, with `~/flutter/bin`, `~/.cargo/bin`, `~/.pub-cache/bin` on PATH:
 ```
-cargo make --profile development-mac-arm64 appflowy-core-dev-macos   # Rust core
-cargo make code_generation                                            # locale keys + freezed (only needed after clean/pubspec changes)
-cd appflowy_flutter && flutter run -d macos                           # launch the app
+# Dev run (debug; uses data_dev* workspace):
+cargo make --profile development-mac-arm64 appflowy-core-dev-macos
+cargo make code_generation
+cd appflowy_flutter && flutter run -d macos
+
+# Release build (uses the real data* workspace — the user's daily app):
+cargo make --profile production-mac-arm64 appflowy-core-release
+cd appflowy_flutter && flutter build macos --release
+
+# Real-target regression test (the ONLY trustworthy way to check RTL geometry):
+flutter test integration_test/desktop/document/document_rtl_empty_caret_test.dart -d macos
 ```
