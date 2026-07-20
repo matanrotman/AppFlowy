@@ -94,6 +94,11 @@ final CommandShortcutEvent arrowUpToTitle = CommandShortcutEvent(
   getDescription: () => 'arrow up to title',
   handler: (editorState) => _arrowKeyToTitle(
     editorState: editorState,
+    // Only jump to the title from the first VISUAL line of the first
+    // block. Without this, when the first block wraps onto several lines,
+    // arrow-up from any lower line skips the block's own upper lines and
+    // goes straight to the title.
+    onlyFromFirstVisualLine: true,
     checkSelection: (selection) {
       if (!selection.isCollapsed || !selection.start.path.equals([0])) {
         return false;
@@ -106,6 +111,7 @@ final CommandShortcutEvent arrowUpToTitle = CommandShortcutEvent(
 KeyEventResult _arrowKeyToTitle({
   required EditorState editorState,
   required bool Function(Selection selection) checkSelection,
+  bool onlyFromFirstVisualLine = false,
 }) {
   final coverTitleFocusNode = editorState.document.root.context
       ?.read<SharedEditorContext?>()
@@ -125,8 +131,38 @@ KeyEventResult _arrowKeyToTitle({
     return KeyEventResult.ignored;
   }
 
+  // When the first block wraps, arrow-up should walk up the block's own
+  // visual lines before reaching the title. Only the first visual line has
+  // nothing above it inside the block.
+  if (onlyFromFirstVisualLine && !_isOnFirstVisualLine(node, selection.end)) {
+    return KeyEventResult.ignored;
+  }
+
   editorState.selection = null;
   coverTitleFocusNode.requestFocus();
 
   return KeyEventResult.handled;
+}
+
+/// Whether [position] renders on the first visual (soft-wrapped) line of
+/// [node].
+///
+/// [Position] has no notion of visual lines, so this compares the caret
+/// rect at [position] against the caret rect at the block's start: a lower
+/// visual line sits about a line-height below the first. If the geometry
+/// can't be resolved, it returns `true` so the caller keeps the previous
+/// "first block" behavior rather than swallowing the key.
+bool _isOnFirstVisualLine(Node node, Position position) {
+  final selectable = node.selectable;
+  if (selectable == null) {
+    return true;
+  }
+  final caret = selectable.getCursorRectInPosition(position);
+  final firstLineCaret = selectable.getCursorRectInPosition(
+    Position(path: node.path, offset: 0),
+  );
+  if (caret == null || firstLineCaret == null) {
+    return true;
+  }
+  return caret.top <= firstLineCaret.top + caret.height / 2;
 }
