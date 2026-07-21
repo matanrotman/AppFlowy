@@ -111,6 +111,11 @@ final CommandShortcutEvent arrowUpToTitle = CommandShortcutEvent(
 KeyEventResult _arrowKeyToTitle({
   required EditorState editorState,
   required bool Function(Selection selection) checkSelection,
+
+  /// When true, only jump to the title if the caret is on the block's first
+  /// visual (soft-wrapped) line. Best-effort: if the caret geometry can't be
+  /// resolved (see [_isOnFirstVisualLine]), the jump is allowed anyway so
+  /// the key is never swallowed.
   bool onlyFromFirstVisualLine = false,
 }) {
   final coverTitleFocusNode = editorState.document.root.context
@@ -164,5 +169,11 @@ bool _isOnFirstVisualLine(Node node, Position position) {
   if (caret == null || firstLineCaret == null) {
     return true;
   }
-  return caret.top <= firstLineCaret.top + caret.height / 2;
+  // Carets on the same visual line share (almost) the same top; a caret on a
+  // lower line sits at least one line-height further down. Half the first
+  // line's height is a midpoint between those two cases, tolerating small
+  // rounding differences without misreading the second line as the first.
+  // The first line's height is the basis so the check is robust to later
+  // lines having different heights (e.g. differing font sizes).
+  return caret.top <= firstLineCaret.top + firstLineCaret.height / 2;
 }
